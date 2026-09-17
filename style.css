@@ -611,19 +611,22 @@
 .bm-hero-checks svg{width:16px;height:16px;color:var(--bm-ok);flex:none;margin-top:4px;}
 
 /* composição dos 3 frascos, sem card e sem fundo */
-.bm-hero-frascos{position:relative;aspect-ratio:1/.94;max-width:620px;margin:0 auto;width:100%;}
+.bm-hero-frascos{
+  position:relative;width:100%;max-width:580px;margin:0 auto;
+  display:flex;align-items:flex-end;justify-content:center;
+}
 .bm-hero-frascos::before{            /* profundidade: brilho atrás */
-  content:"";position:absolute;left:50%;top:44%;width:86%;height:70%;transform:translate(-50%,-50%);
+  content:"";position:absolute;left:50%;top:46%;width:86%;height:66%;transform:translate(-50%,-50%);
   background:radial-gradient(ellipse at center,rgba(143,198,232,.20),transparent 68%);
   filter:blur(10px);
 }
 .bm-hero-frascos::after{             /* sombra de contato no chão */
-  content:"";position:absolute;left:50%;bottom:4%;width:74%;height:5%;transform:translateX(-50%);
+  content:"";position:absolute;left:50%;bottom:-8px;width:74%;height:16px;transform:translateX(-50%);
   background:radial-gradient(ellipse at center,rgba(0,0,0,.6),transparent 72%);
   filter:blur(7px);
 }
 .bm-hf{
-  position:absolute;display:block;width:37%;aspect-ratio:295/781;
+  position:relative;display:block;flex:none;width:36%;aspect-ratio:295/781;
   transform:translate3d(var(--mx,0px),var(--my,0px),0);
   transition:transform .6s cubic-bezier(.2,.7,.2,1);
   will-change:transform;
@@ -636,9 +639,9 @@
   animation-delay:var(--atraso,0s);
   will-change:transform;
 }
-.bm-hf--enigma{left:0;bottom:6%;z-index:2;}
-.bm-hf--midtown{left:31.5%;bottom:17%;width:39%;z-index:3;}
-.bm-hf--barbarius{right:0;bottom:6%;z-index:2;}
+.bm-hf--enigma{z-index:2;}
+.bm-hf--midtown{width:38%;margin:0 -5% 9%;z-index:3;}   /* central: maior, sobreposto e mais alto */
+.bm-hf--barbarius{z-index:2;}
 
 @keyframes bm-flutua-a{
   0%,100%{transform:translate3d(0,0,0) rotate(-1deg);}
@@ -666,14 +669,14 @@
   .bm-hero-grid{grid-template-columns:1fr;grid-template-areas:"intro" "frascos" "oferta";}
   .bm-hero-titulo{font-size:clamp(28px,7.6vw,38px);margin-bottom:12px;}
   .bm-hero-sub{font-size:16px;}
-  .bm-hero-frascos{max-width:340px;margin:14px auto 2px;}
+  .bm-hero-frascos{max-width:300px;margin:18px auto 14px;}
   .bm-hero-bloco{margin-top:4px;}
   .bm-hero-oferta{padding:20px;}
   .bm-hero-por{font-size:clamp(40px,11vw,52px);}
   .bm-hero-checks{margin-top:16px;font-size:14px;}
 }
 @media (max-width:420px){
-  .bm-hero-frascos{max-width:290px;}
+  .bm-hero-frascos{max-width:260px;}
   .bm-hero-sub{font-size:15.5px;}
 }
 
