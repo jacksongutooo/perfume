@@ -74,11 +74,46 @@
   }
 
   /* ---------------- eventos de analytics ---------------- */
+
+  /* Equivalência com os eventos padrão do Meta Pixel.
+     purchase só existe aqui porque só é disparado com pagamento confirmado. */
+  var EVENTOS_META = {
+    view_offer: 'ViewContent',
+    begin_checkout: 'InitiateCheckout',
+    add_shipping_info: 'AddShippingInfo',   // evento personalizado
+    generate_pix: 'AddPaymentInfo',
+    purchase: 'Purchase'
+  };
+  var PADRAO_META = ['ViewContent', 'InitiateCheckout', 'AddPaymentInfo', 'Purchase'];
+
+  function enviarMeta(nome, dados) {
+    if (typeof window.fbq !== 'function') return;
+    var meta = EVENTOS_META[nome];
+    if (!meta) return;
+
+    var props = { currency: 'BRL' };
+    if (dados.value != null) props.value = dados.value;
+    if (dados.products) props.content_ids = dados.products;
+    if (dados.plan) props.content_name = dados.plan;
+    props.content_type = 'product';
+
+    try {
+      if (PADRAO_META.indexOf(meta) !== -1) {
+        /* externalRef como eventID evita contagem dupla se um dia entrar a API de conversões */
+        if (dados.externalRef) fbq('track', meta, props, { eventID: dados.externalRef });
+        else fbq('track', meta, props);
+      } else {
+        fbq('trackCustom', meta, props);
+      }
+    } catch (e) {}
+  }
+
   function evento(nome, dados) {
     var payload = Object.assign({ event: nome }, dados || {});
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push(payload);
     window.dispatchEvent(new CustomEvent('bodyman:' + nome, { detail: payload }));
+    enviarMeta(nome, payload);
   }
 
   /* ---------------- máscaras ---------------- */
