@@ -61,14 +61,19 @@ automaticamente, e `verified: true` exibe o selo "Compra verificada".
 ## Arquivos
 
 ```
-api/create-payment.js      POST  cria a venda e devolve o PIX
-api/payment-status.js      GET   consulta o status (protegido por token)
-api/blackcat-webhook.js    POST  recebe transaction.paid da BlackCat
-api/_lib/config.js         planos, produtos, flags, divisão de centavos
-api/_lib/validate.js       validação de plano, cliente e endereço
-api/_lib/store.js          persistência dos pedidos (Vercel KV / Upstash)
-api/_lib/blackcat.js       cliente HTTP da BlackCat
-api/_lib/http.js           resposta JSON e erros sem vazar detalhe interno
+api/create-payment.js      POST /api/create-payment    cria a venda e devolve o PIX
+api/payment-status.js      GET  /api/payment-status     consulta o status (token obrigatório)
+api/blackcat-webhook.js    POST /api/blackcat-webhook   recebe transaction.paid
+
+Módulos internos (o prefixo _ faz a Vercel NÃO transformá-los em rota):
+api/_config.js             planos, produtos, flags, divisão de centavos
+api/_validate.js           validação de plano, cliente e endereço
+api/_store.js              persistência dos pedidos (Vercel KV / Upstash)
+api/_blackcat.js           cliente HTTP da BlackCat
+api/_http.js               resposta JSON e erros sem vazar detalhe interno
+
+Nenhum arquivo de /api pode ser copiado para a raiz: na raiz ele vira asset
+público e a Vercel deixa de criar a Function.
 checkout.js                fluxo de checkout no navegador
 ```
 
