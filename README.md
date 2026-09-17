@@ -53,3 +53,50 @@ automaticamente, e `verified: true` exibe o selo "Compra verificada".
 - Preencher `CHECKOUT_URL`.
 - Preencher `SAME_DAY_SHIPPING_HOLIDAYS` com os feriados do ano.
 - Conferir se o frete grátis vale para todas as quantidades (`FREE_SHIPPING_MIN_ITEMS`).
+
+---
+
+# Checkout PIX (BlackCat)
+
+## Arquivos
+
+```
+api/create-payment.js      POST  cria a venda e devolve o PIX
+api/payment-status.js      GET   consulta o status (protegido por token)
+api/blackcat-webhook.js    POST  recebe transaction.paid da BlackCat
+api/_lib/config.js         planos, produtos, flags, divisão de centavos
+api/_lib/validate.js       validação de plano, cliente e endereço
+api/_lib/store.js          persistência dos pedidos (Vercel KV / Upstash)
+api/_lib/blackcat.js       cliente HTTP da BlackCat
+api/_lib/http.js           resposta JSON e erros sem vazar detalhe interno
+checkout.js                fluxo de checkout no navegador
+```
+
+## Variáveis de ambiente (Vercel → Settings → Environment Variables)
+
+| Variável | Obrigatória | Para quê |
+|---|---|---|
+| `BLACKCAT_API_KEY` | sim | Autentica na BlackCat. Só no servidor. |
+| `KV_REST_API_URL` | sim | Banco dos pedidos. Criada sozinha ao conectar um KV/Upstash. |
+| `KV_REST_API_TOKEN` | sim | Idem. |
+| `PAYMENTS_ENABLED` | não | `false` = modo de teste, não cria cobrança real. Padrão `true`. |
+| `BLACKCAT_WEBHOOK_URL` | não | Padrão `https://idealstore.online/api/blackcat-webhook`. |
+| `BLACKCAT_WEBHOOK_SECRET` | não | Se definido, o webhook exige `?secret=` ou `X-Webhook-Secret`. |
+| `PIX_EXPIRES_IN_DAYS` | não | Padrão `1`. |
+
+Nunca usar prefixo `VITE_` ou `NEXT_PUBLIC_`: isso entregaria a chave ao navegador.
+
+## Preços
+
+Definidos em `api/_lib/config.js`, em centavos: `single 4990`, `double 7990`,
+`triple 9700`. O navegador envia apenas `plan`. Qualquer `amount`, `price` ou
+`total` vindo do cliente é ignorado.
+
+Ao mudar o preço, alterar nos dois lugares: `CONFIG` em `script.js` (o que o
+cliente vê) e `PLANS` em `api/_lib/config.js` (o que é cobrado).
+
+## Estados do pedido
+
+`PENDING_PAYMENT` → `PAID` → `PROCESSING` → `SHIPPED` → `DELIVERED`,
+além de `CANCELLED`, `REFUNDED` e `EXPIRED`.
+Pagamento confirmado marca apenas `PAID`. Postagem é outra etapa.

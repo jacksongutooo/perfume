@@ -646,6 +646,9 @@
   function selecionar(op, destino){
     estado.opcao = op;
     atualizar();
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ event:'select_plan', plan: PLANO_POR_OPCAO[op],
+      value: precoDe(op), currency:'BRL' });
     if(destino) irPara(destino);
   }
 
@@ -679,21 +682,38 @@
     });
   });
 
-  elFinal.addEventListener('click', function(){
+  /* plano no formato que o backend entende */
+  var PLANO_POR_OPCAO = { '1':'single', '2':'double', 'kit':'triple' };
+
+  function pedidoAtual(){
     var itens = estado.opcao === 'kit' ? ORDEM.slice() : estado.escolhas.slice(0, quantidade());
-    var pedido = {
-      opcao: estado.opcao,
-      itens: itens.map(function(c){ return FRAGRANCIAS[c].nome; }),
+    var escolhidos = itens.filter(Boolean);
+    return {
+      plan: PLANO_POR_OPCAO[estado.opcao],
+      produtos: escolhidos,
       frascos: quantidade(),
-      volume_ml: quantidade() * 200,
-      total: precoDe(estado.opcao)
+      volumeMl: quantidade() * 200,
+      total: Math.round(precoDe(estado.opcao) * 100),   /* centavos */
+      completo: escolhidos.length === quantidade()
     };
-    if(CONFIG.CHECKOUT_URL){
-      window.location.href = CONFIG.CHECKOUT_URL;   /* conecte o checkout aqui */
+  }
+
+  elFinal.addEventListener('click', function(){
+    var pedido = pedidoAtual();
+    if(!pedido.completo) return;
+
+    if(CONFIG.CHECKOUT_URL){                     /* checkout externo, se configurado */
+      window.location.href = CONFIG.CHECKOUT_URL;
       return;
     }
-    console.log('Pedido:', pedido);
-    elAviso.textContent = 'Pedido montado: ' + pedido.itens.join(', ') + ' — ' + brl(pedido.total) + '.';
+
+    /* checkout.js escuta este evento e abre o fluxo do PIX */
+    window.dispatchEvent(new CustomEvent('bodyman:checkout', { detail: pedido }));
+
+    if(!window.BodymanCheckout){
+      elAviso.textContent = 'Checkout indisponível no momento. Tente novamente em instantes.';
+      console.error('[bodyman] checkout.js não carregou.');
+    }
   });
 
   /* ---------------- CTA fixo do mobile ---------------- */
@@ -755,4 +775,7 @@
   checarSticky();
   prepararEntrada();
   ligarParallax();
+
+  /* superfície pública mínima usada pelo checkout.js */
+  window.BODYMAN = { pedidoAtual: pedidoAtual, statusEnvio: statusEnvio, brl: brl };
 })();
