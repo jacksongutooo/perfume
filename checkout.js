@@ -242,9 +242,7 @@
 
   function telaPix() {
     var r = estado.resposta;
-    var qr = r.pix.qrCodeBase64
-      ? '<img class="bm-co-qr" alt="QR Code do PIX" src="' + (String(r.pix.qrCodeBase64).indexOf('data:') === 0 ? r.pix.qrCodeBase64 : 'data:image/png;base64,' + r.pix.qrCodeBase64) + '">'
-      : '<div class="bm-co-qr" id="bm-co-qr-canvas"></div>';
+    var qr = '<div class="bm-co-qr" id="bm-co-qr-canvas"></div>';
 
     return (r.testMode ? '<p class="bm-co-teste">Modo de teste — cobrança não criada.</p>' : '') +
       '<h2 class="bm-co-titulo">PIX gerado com sucesso</h2>' +
@@ -465,7 +463,7 @@
   function ligarPix() {
     var r = estado.resposta;
 
-    if (!r.pix.qrCodeBase64 && r.pix.copyPaste) desenharQR(r.pix.copyPaste);
+    montarQR(r);
 
     $('#bm-co-copiar').addEventListener('click', function () {
       var botao = this;
@@ -494,11 +492,42 @@
     document.body.removeChild(a);
   }
 
-  /* QR desenhado localmente só quando a BlackCat não manda a imagem.
+  /**
+   * A imagem do QR pode chegar em formatos diferentes: data URI completo,
+   * URL de imagem ou base64 puro. Se não for nenhum desses (por exemplo
+   * quando vem o próprio payload EMV), devolve null e desenhamos localmente.
+   */
+  function fonteImagemQR(valor) {
+    if (!valor) return null;
+    var v = String(valor).trim();
+    if (v.indexOf('data:image') === 0) return v;
+    if (/^https?:\/\//i.test(v)) return v;
+    var limpo = v.replace(/\s/g, '');
+    if (/^[A-Za-z0-9+/=]+$/.test(limpo) && limpo.length > 100) return 'data:image/png;base64,' + limpo;
+    return null;
+  }
+
+  /** Tenta a imagem da BlackCat; qualquer falha cai no desenho local. */
+  function montarQR(r) {
+    var alvo = $('#bm-co-qr-canvas');
+    if (!alvo) return;
+    var codigo = r.pix.copyPaste || r.pix.qrCode || '';
+    var src = fonteImagemQR(r.pix.qrCodeBase64);
+
+    if (!src) { desenharQR(codigo); return; }
+
+    var img = new Image();
+    img.alt = 'QR Code do PIX';
+    img.onerror = function () { desenharQR(codigo); };
+    img.onload = function () { alvo.innerHTML = ''; alvo.appendChild(img); };
+    img.src = src;
+  }
+
+  /* QR desenhado localmente quando a BlackCat não manda uma imagem utilizável.
      O código continua sendo exatamente o recebido dela. */
   function desenharQR(codigo) {
     var alvo = $('#bm-co-qr-canvas');
-    if (!alvo) return;
+    if (!alvo || !codigo) return;
     function renderizar() {
       try {
         var canvas = document.createElement('canvas');
