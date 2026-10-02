@@ -78,6 +78,9 @@
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-2.webp', thumb:'img/clientes/cliente-2-p.webp' }],
       verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',   // frascos sem tampa sobre a toalha
+      photos:[{ src:'img/clientes/cliente-11.webp', thumb:'img/clientes/cliente-11-p.webp' }],
+      verified:false, orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Enigma',   // a foto mostra só o Enigma: CONFIRMAR o que o cliente comprou
       photos:[{ src:'img/clientes/cliente-10.webp', thumb:'img/clientes/cliente-10-p.webp' }],
       verified:false, orderRef:'' },
@@ -88,6 +91,9 @@
       photos:[{ src:'img/clientes/cliente-7.webp', thumb:'img/clientes/cliente-7-p.webp' }],
       verified:false, orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
+      photos:[{ src:'img/clientes/cliente-13.webp', thumb:'img/clientes/cliente-13-p.webp' }],
+      verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-9.webp', thumb:'img/clientes/cliente-9-p.webp' }],
       verified:false, orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
@@ -95,6 +101,9 @@
       verified:false, orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-4.webp', thumb:'img/clientes/cliente-4-p.webp' }],
+      verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',   // foto original estava de lado; a versão do site foi girada
+      photos:[{ src:'img/clientes/cliente-12.webp', thumb:'img/clientes/cliente-12-p.webp' }],
       verified:false, orderRef:'' },
 
     /* ---- Avaliações em texto que já estavam no site (mantidas como estavam) ----
@@ -537,6 +546,13 @@
             ? DESTAQUES.slice(0, parseInt(alvo.getAttribute('data-lb-i'), 10)).filter(function (r) { return fotosDe(r).length; }).length
             : parseInt(alvo.getAttribute('data-lb-i'), 10) || 0);
         }
+        return;
+      }
+      /* fotos avulsas (ex.: embalagem em "Seu pedido chega assim") */
+      var avulsa = e.target.closest ? e.target.closest('img[data-ampliar]') : null;
+      if (avulsa) {
+        var legenda = avulsa.parentNode.querySelector('figcaption');
+        abrirLb([{ src: avulsa.getAttribute('data-ampliar'), alt: avulsa.alt, legenda: legenda ? legenda.textContent : '' }], 0);
         return;
       }
       /* galeria "Veja de perto" */
