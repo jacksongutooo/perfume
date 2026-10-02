@@ -81,7 +81,7 @@
     { name:'', rating:null, text:'', date:'', product:'Kit completo',   // frascos sem tampa sobre a toalha
       photos:[{ src:'img/clientes/cliente-11.webp', thumb:'img/clientes/cliente-11-p.webp' }],
       verified:false, orderRef:'' },
-    { name:'', rating:null, text:'', date:'', product:'Enigma',   // a foto mostra só o Enigma: CONFIRMAR o que o cliente comprou
+    { name:'', rating:5, text:'', date:'', product:'Enigma',   // cliente confirmou: comprou só o Enigma e deu nota 5
       photos:[{ src:'img/clientes/cliente-10.webp', thumb:'img/clientes/cliente-10-p.webp' }],
       verified:false, orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
@@ -315,8 +315,8 @@
     var f = fotosDe(r)[0];
     return '<article class="bm-av-card bm-av-card--foto">' +
       '<button type="button" class="bm-thumb" data-lb-review="' + i + '" data-lb-j="0" aria-label="Ampliar foto enviada por ' + escapar(nomeDe(r)) + '">' +
-        '<img src="' + escapar(f.thumb) + '" alt="Foto do kit Bodyman enviada por cliente" loading="lazy" decoding="async"></button>' +
-      '<div class="bm-av-tile-txt"><p class="bm-av-nome">' + escapar(nomeDe(r)) + '</p>' +
+        '<img src="' + escapar(f.thumb) + '" alt="Foto enviada por cliente — ' + escapar(r.product || 'Bodyman') + '" loading="lazy" decoding="async"></button>' +
+      '<div class="bm-av-tile-txt">' + (temNota(r) ? estrelas(r.rating) : '') + '<p class="bm-av-nome">' + escapar(nomeDe(r)) + '</p>' +
         '<p class="bm-av-meta">' + escapar([r.product, dataBR(r.date)].filter(Boolean).join(' · ')) + '</p>' +
         (verificada(r) ? '<span class="bm-verificada">✓ Compra verificada</span>' : '') +
       '</div>' +
@@ -325,7 +325,7 @@
 
   function cardCompleto(r, i) {
     var fotos = fotosDe(r);
-    if (!r.text && !temNota(r) && fotos.length) return cardFoto(r, i);
+    if (!r.text && fotos.length) return cardFoto(r, i);
     var meta = [dataBR(r.date), r.age ? r.age + ' anos' : ''].filter(Boolean).join(' · ');
     var avatar = r.avatar
       ? '<span class="bm-avatar"><img src="' + escapar(r.avatar) + '" alt="" loading="lazy"></span>'
