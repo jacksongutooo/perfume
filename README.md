@@ -65,12 +65,14 @@ Ficam no array `REVIEWS` do `script.js`. Só use avaliações reais.
   product:'Kit completo',
   photos:[{ src:'img/clientes/foto.webp', thumb:'img/clientes/foto-p.webp' }],
   avatar:'',            // foto do cliente (opcional)
-  verified:true, orderRef:'IDEAL-20260920-AB12CD34',
+  verified:true, orderRef:'IDEAL-20260920-AB12CD34',   // ou verifiedBy:'loja'
   featured:true }       // aparece nos destaques perto do botão de compra (até 3)
 ```
 
 - Sem `name`, aparece "Cliente Bodyman". Sem `rating`, não aparecem estrelas.
-- O selo "Compra verificada" só aparece com `verified:true` **e** `orderRef` preenchido.
+- O selo "Compra verificada" só aparece com `verified:true` **e** `orderRef` (número do
+  pedido) ou `verifiedBy` (quem confirmou a compra, ex.: `'loja'`) preenchido. Use só
+  quando você sabe que a pessoa comprou.
 - A nota média e as barras são calculadas das avaliações com nota. Sem nenhuma
   nota, a página não mostra estrelas.
 - Fotos novas: converta para WebP (ex.: em squoosh.app), largura até 828 px, e

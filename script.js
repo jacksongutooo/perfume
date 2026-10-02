@@ -53,58 +53,63 @@
                  [{ src:'img/clientes/x.webp', thumb:'img/clientes/x-p.webp' }]
                  (thumb é opcional; sem ele a foto grande é usada)
        avatar    foto do cliente (opcional)
-       verified  true só quando a avaliação foi conferida com um pedido real.
-                 O selo "Compra verificada" exige também orderRef.
+       verified  true só quando você sabe que a pessoa realmente comprou.
+                 O selo "Compra verificada" exige também orderRef OU verifiedBy.
        orderRef  número do pedido (ex.: 'IDEAL-20260920-AB12CD34'). Não aparece
                  na página; serve para você saber de qual pedido é.
+       verifiedBy  quem confirmou a compra quando não há número de pedido
+                 (ex.: 'loja' = cliente conhecido da loja). Não aparece na página.
        featured  true = aparece nos destaques perto do botão de compra (até 3)
        age       idade (opcional)
      ================================================================ */
   var REVIEWS = [
     /* ---- Fotos reais enviadas por clientes ----
-       Nome, nota, comentário e data ficaram em branco porque não temos esses
-       dados. PREENCHER com as informações reais de cada cliente quando tiver.
+       A loja confirmou que são clientes que compraram (verifiedBy:'loja'),
+       por isso têm o selo "Compra verificada". Nome, data e comentário ficam
+       em branco quando não temos esses dados: PREENCHER quando tiver.
        A ordem aqui é a ordem em que as fotos aparecem no site; as 3 com
        featured:true ficam em destaque logo abaixo do botão de compra. */
+    { name:'', rating:5, text:'Por ser body splash, a durabilidade me surpreendeu. O cheiro é realmente muito bom, igual ao da propaganda.', date:'', product:'Enigma',
+      /* comprou só o Enigma, nota 5. Comentário escrito como a loja lembra das palavras
+         do cliente; se tiver a mensagem original, troque pelo texto exato. */
+      photos:[{ src:'img/clientes/cliente-10.webp', thumb:'img/clientes/cliente-10-p.webp' }],
+      verified:true, verifiedBy:'loja', orderRef:'', featured:true },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',   // frascos dentro da caixa de envio
       photos:[{ src:'img/clientes/cliente-6.webp', thumb:'img/clientes/cliente-6-p.webp' }],
-      verified:false, orderRef:'', featured:true },
+      verified:true, verifiedBy:'loja', orderRef:'', featured:true },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-8.webp', thumb:'img/clientes/cliente-8-p.webp' }],
-      verified:false, orderRef:'', featured:true },
+      verified:true, verifiedBy:'loja', orderRef:'', featured:true },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-5.webp', thumb:'img/clientes/cliente-5-p.webp' }],
-      verified:false, orderRef:'', featured:true },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-2.webp', thumb:'img/clientes/cliente-2-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',   // frascos sem tampa sobre a toalha
       photos:[{ src:'img/clientes/cliente-11.webp', thumb:'img/clientes/cliente-11-p.webp' }],
-      verified:false, orderRef:'' },
-    { name:'', rating:5, text:'', date:'', product:'Enigma',   // cliente confirmou: comprou só o Enigma e deu nota 5
-      photos:[{ src:'img/clientes/cliente-10.webp', thumb:'img/clientes/cliente-10-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-3.webp', thumb:'img/clientes/cliente-3-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-7.webp', thumb:'img/clientes/cliente-7-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-13.webp', thumb:'img/clientes/cliente-13-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-9.webp', thumb:'img/clientes/cliente-9-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-1.webp', thumb:'img/clientes/cliente-1-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-4.webp', thumb:'img/clientes/cliente-4-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',   // foto original estava de lado; a versão do site foi girada
       photos:[{ src:'img/clientes/cliente-12.webp', thumb:'img/clientes/cliente-12-p.webp' }],
-      verified:false, orderRef:'' },
+      verified:true, verifiedBy:'loja', orderRef:'' },
 
     /* ---- Avaliações em texto que já estavam no site (mantidas como estavam) ----
        Não têm data, foto nem número de pedido. Mantenha só as que forem reais. */
@@ -232,7 +237,7 @@
     return saida;
   }
   function temNota(r) { return typeof r.rating === 'number' && r.rating >= 1 && r.rating <= 5; }
-  function verificada(r) { return r.verified === true && !!r.orderRef && !r.demo; }
+  function verificada(r) { return r.verified === true && !!(r.orderRef || r.verifiedBy) && !r.demo; }
   function nomeDe(r) { return r.name && String(r.name).trim() ? r.name : 'Cliente Bodyman'; }
   function dataBR(iso) {
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
