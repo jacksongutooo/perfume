@@ -1,781 +1,862 @@
-(function(){
-  "use strict";
+(function () {
+  'use strict';
 
   /* ================================================================
-     CONFIGURAÇÃO — altere somente aqui para mudar preços e dados.
-     Todos os textos da página (cards, seletor, resumo, CTAs, barra
-     fixa do mobile) são calculados a partir destas constantes.
+     CONFIGURAÇÃO — preços e regras exibidas na página.
+     O valor cobrado é sempre o do servidor (api/_config.js): ao mudar
+     um preço aqui, mude também lá.
+     Os preços também estão escritos no index.html como reserva (para
+     nunca aparecer campo vazio). O script reescreve tudo a partir daqui.
      ================================================================ */
   var CONFIG = {
     SINGLE_PRICE: 49.90,   // 1 frasco
     DOUBLE_PRICE: 79.90,   // 2 frascos
     TRIPLE_PRICE: 97.00,   // kit com 3
 
-    PREVIOUS_SALES: 4000,  // histórico do canal/site anterior
-    AVERAGE_RATING: 4.8,   // avaliação média (não arredondar para 5)
+    /* Nota média exibida. null = calcula a partir das notas em avaliacoes.js */
+    AVERAGE_RATING: 4.8,
 
-    LAUNCH_BAR_MESSAGE: '🔥 Oferta de lançamento — condições especiais no estoque promocional',
-    STOCK_BADGE: 'Estoque promocional limitado',
+    /* Vendas anteriores: só ligue SHOW_PREVIOUS_SALES se o número for real e comprovável. */
+    PREVIOUS_SALES: 4000,
+    SHOW_PREVIOUS_SALES: false,
 
-    /* Deixe vazio para não exibir. Só preencha se a informação for real.
-       Ex.: 'Estoque promocional próximo do fim' */
-    PROMOTIONAL_STOCK_MESSAGE: '',
+    /* Barra fina do topo e selo da foto principal. Vazio = não aparece. */
+    TOP_BAR_MESSAGE: 'Frete grátis para todo o Brasil · Envio com código de rastreio',
+    OFFER_BADGE: 'Oferta de lançamento',
 
     /* ---- envio no mesmo dia ----
-       Horário e fuso da operação. Sábados, domingos e as datas listadas
-       em SAME_DAY_SHIPPING_HOLIDAYS não são considerados dias úteis. */
+       Sábados, domingos e as datas de SAME_DAY_SHIPPING_HOLIDAYS não são dias úteis. */
     SAME_DAY_SHIPPING_ENABLED: true,
     SAME_DAY_SHIPPING_CUTOFF: '12:00',
     SAME_DAY_SHIPPING_TIMEZONE: 'America/Sao_Paulo',
-    SAME_DAY_SHIPPING_HOLIDAYS: [],       // ex.: ['2026-12-25','2027-01-01']
-    SAME_DAY_SHIPPING_COUNTDOWN: true,    // mostra quanto falta para o corte
+    SAME_DAY_SHIPPING_HOLIDAYS: [],       // ex.: ['2026-11-20','2026-12-25','2027-01-01']
+    SAME_DAY_SHIPPING_COUNTDOWN: true,    // mostra quanto falta para o horário de corte
+    SHIPPING_DEFAULT_TEXT: 'em até 1 dia útil após o pagamento',
 
-    /* Frete grátis a partir de quantos frascos. O briefing só confirma
-       frete grátis no kit com 3; mude para 1 se valer para todos. */
-    FREE_SHIPPING_MIN_ITEMS: 3,
+    /* O servidor não cobra frete em nenhuma opção (SHIPPING_AMOUNT = 0),
+       então o frete grátis vale a partir de 1 frasco. */
+    FREE_SHIPPING_MIN_ITEMS: 1,
 
-    /* URL do checkout. Vazio = apenas registra a seleção no console. */
+    /* URL de um checkout externo. Vazio = usa o checkout PIX desta página. */
     CHECKOUT_URL: ''
   };
 
   /* ================================================================
-     AVALIAÇÕES DOS CLIENTES
-
-     Campos: name, initials (iniciais do avatar), age, rating (1 a 5),
-     product, text.
-
-     Opcionais:
-       date: '2026-09-10'  -> exibe "há X dias", calculado automaticamente
-       verified: true      -> exibe o selo "Compra verificada"
-
-     Sem o campo date, o card não mostra informação de tempo.
+     VEJA O BODYMAN DE PERTO — fotos reais do produto.
+     PREENCHER: coloque a foto em img/de-perto/ e o caminho em "src".
+     Espaço sem foto não aparece no site publicado (na pré-visualização
+     aparece como quadro tracejado, para você ver onde a foto entra).
      ================================================================ */
-  var REAL_REVIEWS = [
-    { name:'Lucas Andrade', initials:'LA', age:23, rating:5, product:'Kit Completo',
-      text:'Peguei o kit com os três e valeu demais. O Enigma virou meu favorito, mas os três são bem diferentes entre si. Na minha pele senti o cheiro por umas 5 horas tranquilo. Pelo preço do trio, achei muito bom.' },
-    { name:'Rafael Mendes', initials:'RM', age:31, rating:5, product:'Kit Completo',
-      text:'Chegou rápido e muito bem embalado. Gostei bastante da proposta de ter três fragrâncias pra momentos diferentes. Barbarius é mais forte, Midtown é mais suave e Enigma fica no meio. Kit completo vale muito mais a pena.' },
-    { name:'Bruno Carvalho', initials:'BC', age:27, rating:5, product:'Kit Completo',
-      text:'Pelo preço eu tava esperando algo mais simples, mas me surpreendeu. Frasco grande de 200 ml e cheiro bem agradável. Em mim a fixação ficou perto de 4 a 5 horas. Compraria novamente.' },
-    { name:'Gustavo Lima', initials:'GL', age:38, rating:5, product:'Kit Completo',
-      text:'Comprei o trio e não me arrependo. Uso um no trabalho, outro pra sair e outro no dia a dia. A variedade é o melhor do kit. Veio tudo certinho e bem protegido.' },
-    { name:'Mateus Rocha', initials:'MR', age:21, rating:4, product:'Midtown',
-      text:'Curti bastante. Meu favorito foi o Midtown porque é mais limpo e fácil de usar todo dia. A duração na minha pele ficou em torno de 4 horas. Pelo valor, achei justo demais.' },
-    { name:'Diego Martins', initials:'DM', age:34, rating:5, product:'Kit Completo',
-      text:'Barbarius é absurdo de bom pra noite. Tem uma pegada mais marcante e diferente. O kit com três compensa porque você não fica preso em uma fragrância só. Chegou bem rápido aqui.' },
-    { name:'Felipe Souza', initials:'FS', age:29, rating:5, product:'Enigma',
-      text:'Já tinha usado body splash antes, mas esses me surpreenderam. O Enigma ficou umas 5 horas na minha pele e ainda dava pra sentir de perto depois. Gostei bastante da embalagem também.' },
-    { name:'André Ribeiro', initials:'AR', age:42, rating:5, product:'Kit Completo',
-      text:'Gostei da apresentação e principalmente do custo-benefício. São três frascos grandes e cada um tem uma proposta diferente. Pra quem gosta de variar perfume, faz bastante sentido.' },
-    { name:'Caio Fernandes', initials:'CF', age:19, rating:5, product:'Kit Completo',
-      text:'Kit muito bom pelo preço. Eu e meu irmão já estamos disputando o Barbarius kkk. Cheiro forte na medida e na minha pele durou perto de 6 horas.' },
-    { name:'Eduardo Nunes', initials:'EN', age:45, rating:5, product:'Kit Completo',
-      text:'Produto chegou bem embalado, sem vazamento e dentro do esperado. Gostei mais do Enigma, tem um cheiro elegante e fácil de usar. O trio foi uma boa compra.' },
-    { name:'Henrique Alves', initials:'HA', age:26, rating:5, product:'Kit Completo',
-      text:'Eu ia pegar só dois, mas pela diferença de preço preferi levar os três. Ainda bem que fiz isso, porque o Midtown que eu achava que seria o que menos usaria acabou sendo um dos melhores.' },
-    { name:'Marcelo Costa', initials:'MC', age:52, rating:4, product:'Kit Completo',
-      text:'Boa variedade de fragrâncias e frascos com ótimo tamanho. Não são todos iguais, cada um tem um estilo bem próprio. Em mim a duração ficou em torno de 4 horas, o que achei bom para body splash.' },
-    { name:'João Pedro Santos', initials:'JS', age:24, rating:5, product:'Kit Completo',
-      text:'O kit completo é disparado a melhor opção. Três body splash de 200 ml por esse valor compensa demais. Chegou rápido e tudo bem protegido.' },
-    { name:'Thiago Moreira', initials:'TM', age:36, rating:5, product:'Kit Completo',
-      text:'O Barbarius foi o que mais gostei. Mais intenso e com presença. O Enigma também é muito bom pra usar à noite. No meu caso ficaram umas 5 horas perceptíveis.' },
-    { name:'Leonardo Freitas', initials:'LF', age:28, rating:5, product:'Kit Completo',
-      text:'Gostei porque não parece que você comprou três cheiros iguais com rótulos diferentes. Cada um tem uma identidade. Pelo preço do combo, achei excelente.' },
-    { name:'Rodrigo Teixeira', initials:'RT', age:41, rating:5, product:'Midtown',
-      text:'Recebi antes do que esperava e veio tudo muito bem embalado. O Midtown é ótimo pra usar no trabalho porque é mais discreto e sofisticado. Vou comprar o kit novamente quando acabar.' },
-    { name:'Vinícius Barros', initials:'VB', age:22, rating:5, product:'Enigma',
-      text:'Pra mim o Enigma ganhou fácil. Cheiro muito bom e fixa legal. Passei de manhã e umas 4 a 5 horas depois ainda sentia na pele. O trio compensa demais.' },
-    { name:'Alexandre Moraes', initials:'AM', age:48, rating:4, product:'Kit Completo',
-      text:'Bom custo-benefício. Os frascos são grandes e o kit permite variar bastante. Gostei especialmente do Midtown. Entrega rápida e embalagem bem feita.' },
-    { name:'Murilo Cardoso', initials:'MC', age:33, rating:5, product:'Kit Completo',
-      text:'Comprei pela promoção do trio e achei que valeu cada real. O Barbarius é mais intenso, Enigma mais elegante e Midtown mais versátil. Uso os três dependendo da ocasião.' },
-    { name:'Daniel Pires', initials:'DP', age:57, rating:5, product:'Kit Completo',
-      text:'Gostei bastante da qualidade geral. Boa apresentação, fragrâncias agradáveis e quantidade excelente. Na minha pele a duração ficou perto de 5 horas. Pelo valor do kit completo, achei uma ótima compra.' }
+  var FOTOS_DE_PERTO = [
+    { titulo: 'Frasco na mão',              src: '', alt: 'Frasco Bodyman de 200 ml segurado na mão' },
+    { titulo: 'As três fragrâncias juntas', src: '', alt: 'Os três frascos Bodyman lado a lado' },
+    { titulo: 'Produto fora da caixa',      src: '', alt: 'Frascos Bodyman fora da caixa' },
+    { titulo: 'Produto dentro da embalagem', src: '', alt: 'Frascos Bodyman dentro da embalagem de envio' },
+    { titulo: 'Caixa pronta para envio',    src: '', alt: 'Caixa do pedido fechada e pronta para envio' },
+    { titulo: 'Detalhes do frasco',         src: '', alt: 'Detalhe do rótulo e da válvula spray do frasco Bodyman' },
+    { titulo: 'Tamanho real do produto',    src: '', alt: 'Frasco Bodyman ao lado de um objeto comum, para comparar o tamanho' }
   ];
 
-  var AVALIACOES = REAL_REVIEWS;
+  /* PREENCHER: foto real da embalagem, exibida em "Seu pedido chega assim". */
+  var FOTO_EMBALAGEM = { src: '', alt: 'Embalagem real de um pedido Bodyman pronta para envio' };
 
-  /* ---------------- fragrâncias (conteúdo do material do produto) ---------------- */
-  var FRAGRANCIAS = {
-    enigma: {
-      nome:'Enigma', ac:'enigma', volume:'200 ml',
-      curta:'Cítrico, aromático e amadeirado.',
-      familia:'Amadeirado especiado',
-      perfil:'Aromático • Refrescante',
-      completa:'Enigma é o Bodyman da autoconfiança masculina. Uma combinação envolvente de notas cítricas vibrantes com um fundo amadeirado sofisticado. O frescor das notas cítricas encontra um fundo amadeirado mais sofisticado, criando um aroma moderno e envolvente.'
-    },
-    midtown: {
-      nome:'Midtown', ac:'midtown', volume:'200 ml',
-      curta:'Fresco, urbano e sofisticado.',
-      familia:'Amadeirado floral almiscarado',
-      perfil:'Urbano • Sofisticado',
-      completa:'Combina frescor aromático com um toque amadeirado sofisticado, resultando em um aroma marcante, limpo e versátil, ideal para quem vive a rotina agitada da cidade e quer deixar uma assinatura discreta, porém inesquecível.'
-    },
-    barbarius: {
-      nome:'Barbarius', ac:'barbarius', volume:'200 ml',
-      curta:'Bergamota, especiarias e notas amadeiradas.',
-      familia:'Aromático fougère',
-      perfil:'Intenso • Magnético',
-      completa:'Abre com um frescor explosivo de bergamota, contrastando com notas picantes e amadeiradas que criam um rastro magnético e inconfundível. Transmite liberdade, intensidade e presença.'
-    }
-  };
+  /* fragrâncias do kit, na ordem em que aparecem */
+  var ORDEM = ['enigma', 'midtown', 'barbarius'];
 
-  var ORDEM = ['enigma','midtown','barbarius'];
-  var estado = { opcao:'kit', escolhas:[null,null] };
+  /* ================================================================
+     utilidades
+     ================================================================ */
+  var FUNIL = window.BM_FUNIL || { evento: function () {}, definirOferta: function () {} };
+  var SITE = window.BM_SITE || { preview: false };
+  var PREVIEW = Boolean(SITE.preview);
 
-  /* ---------------- cálculos ---------------- */
-  var PRECO = { '1':CONFIG.SINGLE_PRICE, '2':CONFIG.DOUBLE_PRICE, 'kit':CONFIG.TRIPLE_PRICE };
+  function $(sel, ctx) { return (ctx || document).querySelector(sel); }
+  function each(sel, fn, ctx) {
+    var lista = typeof sel === 'string' ? (ctx || document).querySelectorAll(sel) : sel;
+    for (var i = 0; i < lista.length; i++) fn(lista[i], i);
+  }
+  function escapar(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function brl(v) { return 'R$ ' + Number(v).toFixed(2).replace('.', ','); }
+  function texto(el, t) { if (el) el.textContent = t; }
+  function rolarPara(el, bloco) {
+    if (!el) return;
+    var reduzir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    try { el.scrollIntoView({ behavior: reduzir ? 'auto' : 'smooth', block: bloco || 'start' }); }
+    catch (e) { el.scrollIntoView(true); }
+  }
 
-  function brl(v){ return 'R$ ' + v.toFixed(2).replace('.', ','); }
-  function qtdDe(op){ return op === 'kit' ? 3 : parseInt(op,10); }
-  function quantidade(){ return qtdDe(estado.opcao); }
-  function precoDe(op){ return PRECO[op]; }
-  function precoAvulso(op){ return CONFIG.SINGLE_PRICE * qtdDe(op); }      // valor comprando separado
-  function precoUnitario(op){ return PRECO[op] / qtdDe(op); }
-  function economia(op){ return precoAvulso(op) - PRECO[op]; }
+  /* ================================================================
+     preços
+     ================================================================ */
+  var PRECO = { '1': CONFIG.SINGLE_PRICE, '2': CONFIG.DOUBLE_PRICE, 'kit': CONFIG.TRIPLE_PRICE };
+  var MAPA = { single: '1', double: '2', triple: 'kit' };
+  var PLANO_POR_OPCAO = { '1': 'single', '2': 'double', 'kit': 'triple' };
+
+  function qtdDe(op) { return op === 'kit' ? 3 : parseInt(op, 10); }
+  function precoDe(op) { return PRECO[op]; }
+  function precoAvulso(op) { return CONFIG.SINGLE_PRICE * qtdDe(op); }
+  function precoUnitario(op) { return PRECO[op] / qtdDe(op); }
+  function economia(op) { return precoAvulso(op) - PRECO[op]; }
   var DIFERENCA_2_PARA_3 = CONFIG.TRIPLE_PRICE - CONFIG.DOUBLE_PRICE;
 
-  var MAPA = { single:'1', double:'2', triple:'kit' };
+  function preencherValores() {
+    each('[data-preco]', function (el) { el.textContent = brl(precoDe(MAPA[el.getAttribute('data-preco')])); });
+    each('[data-unit]', function (el) { el.textContent = brl(precoUnitario(MAPA[el.getAttribute('data-unit')])); });
+    each('[data-econ]', function (el) { el.textContent = brl(economia(MAPA[el.getAttribute('data-econ')])); });
+    each('[data-de]', function (el) { el.textContent = brl(precoAvulso(MAPA[el.getAttribute('data-de')])); });
+    each('[data-diff]', function (el) { el.textContent = brl(DIFERENCA_2_PARA_3); });
+  }
 
-  function preencherValores(){
-    document.querySelectorAll('[data-preco]').forEach(function(el){
-      el.textContent = brl(precoDe(MAPA[el.getAttribute('data-preco')]));
-    });
-    document.querySelectorAll('[data-unit]').forEach(function(el){
-      el.textContent = brl(precoUnitario(MAPA[el.getAttribute('data-unit')]));
-    });
-    document.querySelectorAll('[data-econ]').forEach(function(el){
-      el.textContent = brl(economia(MAPA[el.getAttribute('data-econ')]));
-    });
-    document.querySelectorAll('[data-de]').forEach(function(el){
-      el.textContent = brl(precoAvulso(MAPA[el.getAttribute('data-de')]));
-    });
-    document.querySelectorAll('[data-diff]').forEach(function(el){
-      el.textContent = brl(DIFERENCA_2_PARA_3);
+  function preencherTopo() {
+    var barra = document.getElementById('bm-topbar');
+    if (barra) {
+      if (CONFIG.TOP_BAR_MESSAGE) barra.textContent = CONFIG.TOP_BAR_MESSAGE;
+      else barra.hidden = true;
+    }
+    var selo = document.getElementById('bm-selo-oferta');
+    if (selo) {
+      if (CONFIG.OFFER_BADGE) selo.textContent = CONFIG.OFFER_BADGE;
+      else selo.hidden = true;
+    }
+    each('[data-vendas]', function (el) {
+      if (CONFIG.SHOW_PREVIOUS_SALES && CONFIG.PREVIOUS_SALES > 0) {
+        el.textContent = '· +' + CONFIG.PREVIOUS_SALES.toLocaleString('pt-BR') + ' vendas';
+        el.hidden = false;
+      }
     });
   }
 
-  /* ---------------- lançamento e prova social ---------------- */
-  function preencherLancamento(){
-    document.getElementById('bm-topbar').textContent = CONFIG.LAUNCH_BAR_MESSAGE;
-    document.getElementById('bm-badge-estoque').textContent = CONFIG.STOCK_BADGE;
+  /* ================================================================
+     envio no mesmo dia — horário calculado no fuso da operação
+     ================================================================ */
+  var DIAS_SEMANA = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
-    var aviso = document.getElementById('bm-badge-aviso');
-    if(CONFIG.PROMOTIONAL_STOCK_MESSAGE){
-      aviso.textContent = CONFIG.PROMOTIONAL_STOCK_MESSAGE;
-      aviso.hidden = false;
+  function agoraOperacao() {
+    try {
+      var fmt = new Intl.DateTimeFormat('en-US', {
+        timeZone: CONFIG.SAME_DAY_SHIPPING_TIMEZONE, hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', weekday: 'short'
+      });
+      var p = {};
+      fmt.formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+      var hora = parseInt(p.hour, 10);
+      if (p.dayPeriod) { hora = hora % 12; if (/pm/i.test(p.dayPeriod)) hora += 12; }
+      if (hora === 24) hora = 0;
+      var r = {
+        ano: parseInt(p.year, 10), mes: parseInt(p.month, 10), dia: parseInt(p.day, 10),
+        hora: hora, minuto: parseInt(p.minute, 10), semana: DIAS_SEMANA[p.weekday]
+      };
+      if (isNaN(r.ano + r.mes + r.dia + r.hora + r.minuto) || r.semana === undefined) throw new Error('data');
+      return r;
+    } catch (e) {
+      /* sem Intl completo: o Brasil não tem horário de verão desde 2019 (São Paulo = UTC-3) */
+      var d = new Date(Date.now() - 3 * 3600000);
+      return {
+        ano: d.getUTCFullYear(), mes: d.getUTCMonth() + 1, dia: d.getUTCDate(),
+        hora: d.getUTCHours(), minuto: d.getUTCMinutes(), semana: d.getUTCDay()
+      };
     }
   }
 
-  function preencherProvaSocial(){
-    var v = CONFIG.PREVIOUS_SALES;
-    document.getElementById('bm-vendas').textContent = '+' + v.toLocaleString('pt-BR');
-    document.getElementById('bm-nota').textContent =
-      CONFIG.AVERAGE_RATING.toFixed(1).replace('.', ',') + ' / 5';
-    var stars = document.getElementById('bm-stars');
-    stars.querySelector('i').textContent = '★★★★★';
-    stars.querySelector('i').style.width = (CONFIG.AVERAGE_RATING / 5 * 100) + '%';
-  }
-
-  /* ---------------- envio no mesmo dia ---------------- */
-  function agoraOperacao(){
-    try{
-      return new Date(new Date().toLocaleString('en-US', { timeZone: CONFIG.SAME_DAY_SHIPPING_TIMEZONE }));
-    }catch(e){ return new Date(); }
-  }
-
-  function minutosCorte(){
+  function minutosCorte() {
     var p = String(CONFIG.SAME_DAY_SHIPPING_CUTOFF || '12:00').split(':');
-    return (parseInt(p[0],10) || 0) * 60 + (parseInt(p[1],10) || 0);
+    return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
   }
-
-  function rotuloCorte(){
+  function rotuloCorte() {
     var p = String(CONFIG.SAME_DAY_SHIPPING_CUTOFF || '12:00').split(':');
-    var h = parseInt(p[0],10) || 0, m = parseInt(p[1],10) || 0;
+    var h = parseInt(p[0], 10) || 0, m = parseInt(p[1], 10) || 0;
     return m ? (h + 'h' + (m < 10 ? '0' + m : m)) : (h + 'h');
   }
+  function doisDigitos(n) { return (n < 10 ? '0' : '') + n; }
 
-  function dataISO(d){
-    return d.getFullYear() + '-' +
-      ('0' + (d.getMonth()+1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-  }
-
-  function ehDiaUtil(d){
-    var s = d.getDay();
-    if(s === 0 || s === 6) return false;
-    return (CONFIG.SAME_DAY_SHIPPING_HOLIDAYS || []).indexOf(dataISO(d)) === -1;
-  }
-
-  function statusEnvio(){
-    var d = agoraOperacao();
-    var min = d.getHours() * 60 + d.getMinutes();
+  function statusEnvio() {
+    var a = agoraOperacao();
+    var iso = a.ano + '-' + doisDigitos(a.mes) + '-' + doisDigitos(a.dia);
+    var diaUtil = a.semana >= 1 && a.semana <= 5 &&
+      (CONFIG.SAME_DAY_SHIPPING_HOLIDAYS || []).indexOf(iso) === -1;
+    var min = a.hora * 60 + a.minuto;
     var corte = minutosCorte();
-    return { noPrazo: ehDiaUtil(d) && min < corte, faltam: corte - min };
-  }
-
-  function textoFaltam(min){
-    if(min <= 0) return '';
-    var h = Math.floor(min/60), m = min % 60;
-    if(h > 0) return 'faltam ' + h + 'h' + (m ? (m < 10 ? '0'+m : m) : '');
-    return 'falta' + (m === 1 ? '' : 'm') + ' ' + m + ' min';
-  }
-
-  function aplicarEnvio(){
-    var ligado = CONFIG.SAME_DAY_SHIPPING_ENABLED;
-    var alvos = document.querySelectorAll('[data-envio-linha],[data-envio-card],[data-envio-caixa],[data-envio-rodape]');
-    Array.prototype.forEach.call(alvos, function(el){ el.hidden = !ligado; });
-    if(!ligado) return;
-
-    document.querySelectorAll('[data-corte]').forEach(function(el){ el.textContent = rotuloCorte(); });
-
-    var st = statusEnvio();
-    var restante = (CONFIG.SAME_DAY_SHIPPING_COUNTDOWN && st.noPrazo) ? textoFaltam(st.faltam) : '';
-
-    var hero = document.querySelector('[data-envio-hero]');
-    if(hero){
-      hero.textContent = st.noPrazo
-        ? 'Peça até às ' + rotuloCorte() + ' para postagem ainda hoje' + (restante ? ' (' + restante + ')' : '') + '*'
-        : 'Postagem em até 1 dia útil após a confirmação do pagamento';
-    }
-
-    var resumo = document.querySelector('[data-envio-resumo]');
-    if(resumo){
-      resumo.textContent = st.noPrazo
-        ? 'Pedidos até às ' + rotuloCorte() + ' saem no mesmo dia*' + (restante ? ' — ' + restante : '')
-        : 'Postagem em até 1 dia útil*';
-    }
-
-    var kit = document.querySelector('[data-envio-kit]');
-    if(kit){
-      kit.textContent = 'Postagem no mesmo dia para pagamentos confirmados até às ' +
-        rotuloCorte() + ' em dias úteis';
-    }
-  }
-
-  /* ---------------- carrossel de avaliações ---------------- */
-  var CORES_AVATAR = ['#8FC6E8','#CFC7B7','#7FD3A6','#E8A87C','#B9A7E0','#6FB3DC'];
-
-  function estrelas(nota){
-    return '<span class="bm-stars" aria-label="' + nota + ' de 5">★★★★★' +
-           '<i style="width:' + (Math.max(0,Math.min(5,nota))/5*100) + '%">★★★★★</i></span>';
-  }
-
-  function tempoRelativo(iso){
-    var d = new Date(iso);
-    if(isNaN(d)) return '';
-    var dias = Math.floor((Date.now() - d.getTime()) / 86400000);
-    if(dias <= 0) return 'hoje';
-    if(dias === 1) return 'há 1 dia';
-    if(dias < 30) return 'há ' + dias + ' dias';
-    var meses = Math.floor(dias/30);
-    return meses === 1 ? 'há 1 mês' : 'há ' + meses + ' meses';
-  }
-
-  function escapar(t){
-    return String(t == null ? '' : t)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function cardAvaliacao(r, i){
-    var quando = r.relativeTime || (r.date ? tempoRelativo(r.date) : '');
-    var meta = [r.age ? r.age + ' anos' : '', quando].filter(Boolean).join(' · ');
-    var iniciais = r.initials || (r.name || '').split(' ').filter(Boolean)
-                     .slice(0,2).map(function(p){ return p[0]; }).join('').toUpperCase();
-    return '<article class="bm-depo-card">' +
-      '<div class="bm-depo-topo">' +
-        '<span class="bm-avatar" style="--c:' + CORES_AVATAR[i % CORES_AVATAR.length] + '" aria-hidden="true">' + escapar(iniciais) + '</span>' +
-        '<div style="flex:1">' +
-          '<p class="bm-depo-nome">' + escapar(r.name) + '</p>' +
-          '<p class="bm-depo-meta">' + escapar(meta) + '</p>' +
-        '</div>' +
-        (r.verified && !r.demo ? '<span class="bm-verificada">Compra verificada</span>' : '') +
-      '</div>' +
-      estrelas(r.rating || 5) +
-      '<p class="bm-depo-texto">' + escapar(r.text) + '</p>' +
-      (r.product ? '<p class="bm-depo-produto">' + escapar(r.product) + '</p>' : '') +
-    '</article>';
-  }
-
-  var carEl   = document.getElementById('bm-carrossel');
-  var trackEl = document.getElementById('bm-track');
-  var dotsEl  = document.getElementById('bm-dots');
-  var secaoDepo = document.getElementById('bm-depo');
-
-  var idx = 0, passo = 0, visiveis = 3, totalCards = 0;
-  var timer = null, pausado = false, retomar = null;
-  var arrastando = false, x0 = 0, dx = 0;
-
-  function visiveisAgora(){
-    return window.innerWidth >= 980 ? 3 : (window.innerWidth >= 680 ? 2 : 1);
-  }
-
-  function aplicar(anim){
-    trackEl.style.transition = anim ? 'transform .62s cubic-bezier(.3,.72,.2,1)' : 'none';
-    trackEl.style.transform = 'translate3d(' + (-idx * passo) + 'px,0,0)';
-    var cards = trackEl.children, meio = idx + Math.floor(visiveis/2);
-    for(var i=0;i<cards.length;i++){
-      cards[i].classList.toggle('bm-depo-card--destaque', visiveis === 3 && i === meio);
-    }
-    var pontos = dotsEl.children, ativo = ((idx % totalCards) + totalCards) % totalCards;
-    for(var j=0;j<pontos.length;j++){
-      pontos[j].setAttribute('aria-current', j === ativo ? 'true' : 'false');
-    }
-  }
-
-  function proximo(){
-    idx++; aplicar(true);
-    if(idx >= totalCards){
-      setTimeout(function(){ idx = 0; aplicar(false); }, 640);
-    }
-  }
-
-  function anterior(){
-    if(idx <= 0){
-      idx = totalCards; aplicar(false);
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){ idx--; aplicar(true); }); });
-    }else{ idx--; aplicar(true); }
-  }
-
-  function iniciarAuto(){
-    if(timer) clearInterval(timer);
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    timer = setInterval(function(){
-      if(!pausado && !arrastando && document.visibilityState === 'visible') proximo();
-    }, 5000);
-  }
-
-  function pausarUmPouco(){
-    pausado = true;
-    if(retomar) clearTimeout(retomar);
-    retomar = setTimeout(function(){ pausado = false; }, 10000);
-  }
-
-  function medir(){
-    var card = trackEl.firstElementChild;
-    if(!card) return;
-    var gap = parseFloat(getComputedStyle(trackEl).columnGap || 18) || 18;
-    passo = card.getBoundingClientRect().width + gap;
-  }
-
-  function montarCarrossel(){
-    if(!AVALIACOES.length){ secaoDepo.hidden = true; return; }
-    secaoDepo.hidden = false;
-
-    visiveis = visiveisAgora();
-    totalCards = AVALIACOES.length;
-
-    var html = AVALIACOES.map(cardAvaliacao).join('');
-    for(var c=0;c<visiveis;c++){                       /* clones = loop infinito */
-      html += cardAvaliacao(AVALIACOES[c % totalCards], c);
-    }
-    trackEl.innerHTML = html;
-
-    dotsEl.innerHTML = AVALIACOES.map(function(_, i){
-      return '<button type="button" class="bm-dot" data-i="' + i + '" aria-label="Avaliação ' + (i+1) + '"></button>';
-    }).join('');
-
-    idx = 0; medir(); aplicar(false); iniciarAuto();
-  }
-
-  /* cabeçalho: nota e vendas acumuladas */
-  function preencherCabecalhoDepo(){
-    var st = secaoDepo.querySelector('.bm-depo-resumo .bm-stars i');
-    if(st){ st.textContent = '★★★★★'; st.style.width = (CONFIG.AVERAGE_RATING/5*100) + '%'; }
-    document.getElementById('bm-depo-nota').textContent =
-      CONFIG.AVERAGE_RATING.toFixed(1).replace('.', ',') + '/5';
-    document.getElementById('bm-depo-vendas').textContent =
-      '+' + CONFIG.PREVIOUS_SALES.toLocaleString('pt-BR') + ' vendas acumuladas';
-  }
-
-  function ligarCarrossel(){
-    carEl.addEventListener('mouseenter', function(){ pausado = true; });
-    carEl.addEventListener('mouseleave', function(){ if(!retomar) pausado = false; });
-
-    carEl.querySelectorAll('.bm-seta').forEach(function(b){
-      b.addEventListener('click', function(){
-        pausarUmPouco();
-        b.getAttribute('data-dir') === '1' ? proximo() : anterior();
-      });
-    });
-
-    dotsEl.addEventListener('click', function(e){
-      var b = e.target.closest('.bm-dot');
-      if(!b) return;
-      pausarUmPouco(); idx = parseInt(b.getAttribute('data-i'),10); aplicar(true);
-    });
-
-    trackEl.addEventListener('pointerdown', function(e){
-      arrastando = true; x0 = e.clientX; dx = 0;
-      trackEl.style.transition = 'none';
-      trackEl.setPointerCapture(e.pointerId);
-    });
-    trackEl.addEventListener('pointermove', function(e){
-      if(!arrastando) return;
-      dx = e.clientX - x0;
-      trackEl.style.transform = 'translate3d(' + (-idx * passo + dx) + 'px,0,0)';
-    });
-    function soltar(){
-      if(!arrastando) return;
-      arrastando = false; pausarUmPouco();
-      if(dx < -45) proximo();
-      else if(dx > 45) anterior();
-      else aplicar(true);
-      dx = 0;
-    }
-    trackEl.addEventListener('pointerup', soltar);
-    trackEl.addEventListener('pointercancel', soltar);
-
-    var t;
-    window.addEventListener('resize', function(){
-      clearTimeout(t);
-      t = setTimeout(function(){
-        var v = visiveisAgora();
-        if(v !== visiveis) montarCarrossel(); else { medir(); aplicar(false); }
-      }, 180);
-    });
-  }
-
-  function renderAvaliacoes(){
-    if(!secaoDepo) return;
-    var btn = document.getElementById('bm-ver-avaliacoes');
-    preencherCabecalhoDepo();
-    montarCarrossel();
-    if(AVALIACOES.length){
-      ligarCarrossel();
-      if(btn) btn.addEventListener('click', function(){
-        secaoDepo.scrollIntoView({ behavior:'smooth', block:'start' });
-      });
-    }else if(btn){
-      btn.parentNode.hidden = true;     /* sem avaliações, sem botão */
-    }
-  }
-
-  /* ---------------- parallax discreto do hero (só desktop) ---------------- */
-  function ligarParallax(){
-    var area = document.getElementById('bm-hero-frascos');
-    if(!area) return;
-    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if(!window.matchMedia('(hover: hover) and (min-width: 901px)').matches) return;
-
-    var frascos = area.querySelectorAll('.bm-hf');
-    var pendente = false, px = 0, py = 0;
-
-    window.addEventListener('mousemove', function(e){
-      px = (e.clientX / window.innerWidth) - 0.5;
-      py = (e.clientY / window.innerHeight) - 0.5;
-      if(pendente) return;
-      pendente = true;
-      requestAnimationFrame(function(){
-        frascos.forEach(function(f){
-          var p = parseFloat(f.getAttribute('data-prof')) || 12;
-          f.style.setProperty('--mx', (px * p).toFixed(1) + 'px');
-          f.style.setProperty('--my', (py * p * 0.5).toFixed(1) + 'px');
-        });
-        pendente = false;
-      });
-    }, { passive:true });
-  }
-
-  /* ---------------- slots de escolha (1 ou 2 frascos) ---------------- */
-  var elSlots   = document.getElementById('bm-slots');
-  var elUpsell  = document.getElementById('bm-upsell');
-  var elLista   = document.getElementById('bm-resumo-lista');
-  var elLinhas  = document.getElementById('bm-resumo-linhas');
-  var elTitulo  = document.getElementById('bm-resumo-titulo');
-  var elTotal   = document.getElementById('bm-resumo-total');
-  var elAviso   = document.getElementById('bm-aviso');
-  var elFinal   = document.getElementById('bm-finalizar');
-  var elSticky  = document.getElementById('bm-sticky');
-  var botoesOpc = document.querySelectorAll('.bm-opcao[data-opcao]');
-  var cardsPreco= document.querySelectorAll('.bm-preco[data-opcao]');
-
-  var CHECK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M4 10.5l4 4 8-9"/></svg>';
-
-  function montarSlots(){
-    elSlots.innerHTML = '';
-    if(estado.opcao === 'kit'){
-      var aviso = document.createElement('p');
-      aviso.className = 'bm-escolha-desc';
-      aviso.style.margin = '0';
-      aviso.textContent = 'O kit já vem com as três fragrâncias: Enigma, Midtown e Barbarius, 200 ml cada.';
-      elSlots.appendChild(aviso);
-      return;
-    }
-    var total = quantidade();
-    for(var i=0;i<total;i++){ elSlots.appendChild(montarSlot(i,total)); }
-  }
-
-  function montarSlot(indice,total){
-    var bloco = document.createElement('div');
-
-    var titulo = document.createElement('p');
-    titulo.className = 'bm-slot-titulo';
-    titulo.textContent = total > 1 ? ('Fragrância ' + (indice+1)) : 'Escolha a fragrância';
-    bloco.appendChild(titulo);
-
-    var lista = document.createElement('div');
-    lista.className = 'bm-escolhas';
-
-    ORDEM.forEach(function(chave){
-      var f = FRAGRANCIAS[chave];
-      var linha = document.createElement('div');
-
-      var botao = document.createElement('button');
-      botao.type = 'button';
-      botao.className = 'bm-escolha';
-      botao.setAttribute('data-ac', f.ac);
-      botao.setAttribute('aria-pressed', estado.escolhas[indice] === chave ? 'true' : 'false');
-      botao.innerHTML =
-        '<span class="bm-dot" aria-hidden="true"></span>' +
-        '<span>' +
-          '<span class="bm-escolha-nome">' + f.nome + '</span>' +
-          '<span class="bm-escolha-desc">' + f.curta + '</span>' +
-          '<span class="bm-escolha-vol">' + f.volume + '</span>' +
-        '</span>';
-      botao.addEventListener('click', function(){
-        estado.escolhas[indice] = chave;
-        atualizar();
-      });
-
-      var detalheId = 'bm-det-' + chave + '-' + indice;
-
-      var toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'bm-detalhe-btn';
-      toggle.style.color = 'var(--bm-' + f.ac + ')';
-      toggle.setAttribute('aria-expanded','false');
-      toggle.setAttribute('aria-controls', detalheId);
-      toggle.textContent = 'Ver detalhes da fragrância';
-
-      var detalhe = document.createElement('div');
-      detalhe.className = 'bm-detalhe';
-      detalhe.id = detalheId;
-      detalhe.setAttribute('data-aberto','false');
-      detalhe.innerHTML =
-        '<div class="bm-detalhe-inner"><div class="bm-detalhe-corpo">' +
-          '<strong>' + f.familia + '</strong> · ' + f.perfil + ' · ' + f.volume + ' / 6,76 oz' +
-          '<p style="margin:8px 0 0;">' + f.completa + '</p>' +
-        '</div></div>';
-
-      toggle.addEventListener('click', function(){
-        var aberto = detalhe.getAttribute('data-aberto') === 'true';
-        detalhe.setAttribute('data-aberto', aberto ? 'false' : 'true');
-        toggle.setAttribute('aria-expanded', aberto ? 'false' : 'true');
-        toggle.textContent = aberto ? 'Ver detalhes da fragrância' : 'Ocultar detalhes';
-      });
-
-      linha.appendChild(botao);
-      linha.appendChild(toggle);
-      linha.appendChild(detalhe);
-      lista.appendChild(linha);
-    });
-
-    bloco.appendChild(lista);
-    return bloco;
-  }
-
-  /* ---------------- resumo do pedido ---------------- */
-  function linha(rotulo, valor, classe){
-    return '<div class="' + (classe || '') + '"><span>' + rotulo + '</span><b>' + valor + '</b></div>';
-  }
-
-  function atualizarResumo(){
-    var kit = estado.opcao === 'kit';
-    var frascos = quantidade();
-    var itens = kit ? ORDEM.slice() : estado.escolhas.slice(0, frascos);
-    var pendentes = 0;
-
-    elTitulo.textContent = kit ? 'Seu kit' : 'Resumo do pedido';
-
-    elLista.innerHTML = '';
-    itens.forEach(function(chave, i){
-      var li = document.createElement('li');
-      if(!chave){
-        pendentes++;
-        li.setAttribute('data-vazio','true');
-        li.innerHTML = 'Fragrância ' + (i+1) + ' <span>a escolher</span>';
-      }else{
-        li.innerHTML = CHECK + '<span style="flex:1;color:var(--bm-txt);">Bodyman ' +
-          FRAGRANCIAS[chave].nome + '</span> <span>200 ml</span>';
-      }
-      elLista.appendChild(li);
-    });
-
-    var html = '';
-    html += linha('Quantidade', frascos + (frascos > 1 ? ' produtos' : ' produto'));
-    html += linha('Volume total', (frascos * 200) + ' ml');
-    if(frascos > 1){
-      html += linha('Valor se comprados separadamente', brl(precoAvulso(estado.opcao)));
-      html += linha('Desconto da oferta', '−' + brl(economia(estado.opcao)), 'bm-eco');
-    }
-    html += linha('Frete', frascos >= CONFIG.FREE_SHIPPING_MIN_ITEMS ? 'Grátis' : 'Calculado no checkout');
-    elLinhas.innerHTML = html;
-
-    elTotal.textContent = brl(precoDe(estado.opcao));
-    elFinal.innerHTML = 'Finalizar compra — ' + brl(precoDe(estado.opcao));
-
-    if(pendentes > 0){
-      elFinal.disabled = true;
-      elAviso.textContent = pendentes === 1
-        ? 'Escolha mais 1 fragrância para continuar.'
-        : 'Escolha ' + pendentes + ' fragrâncias para continuar.';
-    }else{
-      elFinal.disabled = false;
-      elAviso.textContent = '';
-    }
-  }
-
-  function atualizar(){
-    botoesOpc.forEach(function(b){
-      b.setAttribute('aria-pressed', b.getAttribute('data-opcao') === estado.opcao ? 'true' : 'false');
-    });
-    cardsPreco.forEach(function(b){
-      b.setAttribute('aria-pressed', b.getAttribute('data-opcao') === estado.opcao ? 'true' : 'false');
-    });
-    elUpsell.hidden = estado.opcao !== '2';
-    montarSlots();
-    atualizarResumo();
-  }
-
-  function irPara(alvo){
-    var el = document.getElementById(alvo);
-    if(el) el.scrollIntoView({ behavior:'smooth', block:'center' });
-  }
-
-  /* ---------------- eventos ---------------- */
-  function selecionar(op, destino){
-    estado.opcao = op;
-    atualizar();
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({ event:'select_plan', plan: PLANO_POR_OPCAO[op],
-      value: precoDe(op), currency:'BRL' });
-    if(destino) irPara(destino);
-  }
-
-  botoesOpc.forEach(function(b){
-    b.addEventListener('click', function(){ selecionar(b.getAttribute('data-opcao')); });
-  });
-
-  cardsPreco.forEach(function(b){
-    b.addEventListener('click', function(){ selecionar(b.getAttribute('data-opcao'), 'bm-seletor'); });
-  });
-
-  /* qualquer CTA do kit: card do kit, seção "por que", âncora de upsell,
-     barra fixa do mobile e o botão "Quero os 3" do comparador */
-  document.querySelectorAll('[data-kit-cta], #bm-quero-3').forEach(function(b){
-    b.addEventListener('click', function(){ selecionar('kit', 'bm-resumo'); });
-  });
-
-  document.querySelectorAll('[data-escolher]').forEach(function(b){
-    b.addEventListener('click', function(){
-      var chave = b.getAttribute('data-escolher');
-      if(estado.opcao === 'kit'){
-        estado.opcao = '1';
-        estado.escolhas = [chave, null];
-      }else{
-        var vaga = estado.escolhas.slice(0, quantidade()).indexOf(null);
-        if(vaga === -1) vaga = 0;
-        estado.escolhas[vaga] = chave;
-      }
-      atualizar();
-      irPara('bm-seletor');
-    });
-  });
-
-  /* plano no formato que o backend entende */
-  var PLANO_POR_OPCAO = { '1':'single', '2':'double', 'kit':'triple' };
-
-  function pedidoAtual(){
-    var itens = estado.opcao === 'kit' ? ORDEM.slice() : estado.escolhas.slice(0, quantidade());
-    var escolhidos = itens.filter(Boolean);
     return {
-      plan: PLANO_POR_OPCAO[estado.opcao],
-      produtos: escolhidos,
-      frascos: quantidade(),
-      volumeMl: quantidade() * 200,
-      total: Math.round(precoDe(estado.opcao) * 100),   /* centavos */
-      completo: escolhidos.length === quantidade()
+      noPrazo: Boolean(CONFIG.SAME_DAY_SHIPPING_ENABLED) && diaUtil && min < corte,
+      faltam: corte - min
     };
   }
 
-  elFinal.addEventListener('click', function(){
-    var pedido = pedidoAtual();
-    if(!pedido.completo) return;
+  function textoFaltam(min) {
+    if (min <= 0) return '';
+    var h = Math.floor(min / 60), m = min % 60;
+    if (h > 0) return 'faltam ' + h + 'h' + (m ? doisDigitos(m) : '');
+    return (m === 1 ? 'falta ' : 'faltam ') + m + ' min';
+  }
 
-    if(CONFIG.CHECKOUT_URL){                     /* checkout externo, se configurado */
-      window.location.href = CONFIG.CHECKOUT_URL;
-      return;
+  /* frase curta: "pague até as 12h e postamos hoje — faltam 2h10" */
+  function textoEnvioCurto() {
+    var st = statusEnvio();
+    if (!st.noPrazo) return CONFIG.SHIPPING_DEFAULT_TEXT;
+    var resta = CONFIG.SAME_DAY_SHIPPING_COUNTDOWN ? textoFaltam(st.faltam) : '';
+    return 'pague até as ' + rotuloCorte() + ' e postamos hoje' + (resta ? ' — ' + resta : '');
+  }
+
+  /* frase completa, usada também na confirmação do pedido */
+  function textoEnvioPedido() {
+    return statusEnvio().noPrazo
+      ? 'Pagamento confirmado até as ' + rotuloCorte() + ' em dia útil: seu pedido é postado hoje.'
+      : 'Seu pedido será postado ' + CONFIG.SHIPPING_DEFAULT_TEXT + '.';
+  }
+
+  function aplicarEnvio() {
+    each('[data-corte]', function (el) { el.textContent = rotuloCorte(); });
+    each('[data-envio-curto]', function (el) { el.textContent = textoEnvioCurto(); });
+    each('[data-envio-etapa]', function (el) {
+      el.textContent = CONFIG.SAME_DAY_SHIPPING_ENABLED
+        ? 'Pagamentos até as ' + rotuloCorte() + ' em dias úteis são postados no mesmo dia; depois disso, ' + CONFIG.SHIPPING_DEFAULT_TEXT + '.'
+        : 'Postagem ' + CONFIG.SHIPPING_DEFAULT_TEXT + '.';
+    });
+    if (!CONFIG.SAME_DAY_SHIPPING_ENABLED) {
+      each('[data-regra-envio]', function (el) {
+        el.textContent = 'A postagem acontece ' + CONFIG.SHIPPING_DEFAULT_TEXT + '. Sábados, domingos e feriados não contam como dia útil.';
+      });
     }
+  }
+
+  /* ================================================================
+     seletor de oferta
+     ================================================================ */
+  var estado = { opcao: 'kit', escolhas: [] };
+
+  var elSeletor = document.getElementById('bm-seletor');
+  var elEscolha = document.getElementById('bm-escolha');
+  var elEscolhaTit = document.getElementById('bm-escolha-tit');
+  var elUpsell = document.getElementById('bm-upsell');
+  var elAviso = document.getElementById('bm-aviso');
+  var elComprar = document.getElementById('bm-comprar');
+
+  function quantidade() { return qtdDe(estado.opcao); }
+
+  function pedidoAtual() {
+    var itens = estado.opcao === 'kit' ? ORDEM.slice() : estado.escolhas.slice(0, quantidade());
+    return {
+      plan: PLANO_POR_OPCAO[estado.opcao],
+      produtos: itens,
+      frascos: quantidade(),
+      volumeMl: quantidade() * 200,
+      total: Math.round(precoDe(estado.opcao) * 100),   /* centavos (o servidor recalcula) */
+      completo: itens.length === quantidade(),
+      freteGratis: quantidade() >= CONFIG.FREE_SHIPPING_MIN_ITEMS
+    };
+  }
+
+  var ROTULOS = {
+    kit: { rotulo: 'Kit completo · 3 frascos · 600 ml', cta: 'Quero meu kit', sticky: 'Kit 3 frascos · frete grátis' },
+    '2': { rotulo: '2 frascos · 400 ml', cta: 'Comprar agora', sticky: '2 frascos · frete grátis' },
+    '1': { rotulo: '1 frasco · 200 ml', cta: 'Comprar agora', sticky: '1 frasco · frete grátis' }
+  };
+
+  function atualizarOferta() {
+    var op = estado.opcao;
+    var kit = op === 'kit';
+
+    each('.bm-opcao[data-opcao]', function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-opcao') === op ? 'true' : 'false');
+    });
+
+    if (elEscolha) {
+      elEscolha.hidden = kit;
+      texto(elEscolhaTit, op === '1' ? 'Escolha a fragrância' : 'Escolha 2 fragrâncias diferentes');
+      each('.bm-chip[data-fragrancia]', function (c) {
+        c.setAttribute('aria-pressed', estado.escolhas.indexOf(c.getAttribute('data-fragrancia')) !== -1 ? 'true' : 'false');
+      });
+    }
+    if (elUpsell) elUpsell.hidden = op !== '2';
+
+    var frete = quantidade() >= CONFIG.FREE_SHIPPING_MIN_ITEMS ? ' · frete grátis' : '';
+    texto($('[data-atual="rotulo"]'), ROTULOS[op].rotulo);
+    texto($('[data-atual="preco"]'), brl(precoDe(op)));
+    texto($('[data-atual="de"]'), brl(precoAvulso(op)));
+    texto($('[data-atual="econ"]'), brl(economia(op)));
+    texto($('[data-atual="unit"]'), brl(precoUnitario(op)));
+    var linhaDe = $('[data-atual-linha="de"]'), linhaCada = $('[data-atual-linha="cada"]');
+    if (linhaDe) linhaDe.hidden = op === '1';
+    if (linhaCada) linhaCada.hidden = op === '1';
+
+    texto(elComprar, ROTULOS[op].cta);
+    texto($('[data-sticky-preco]'), brl(precoDe(op)));
+    texto($('[data-sticky-desc]'), ROTULOS[op].sticky.replace(' · frete grátis', frete));
+    texto($('[data-sticky-btn]'), ROTULOS[op].cta);
+
+    if (pedidoAtual().completo) avisar('');
+    FUNIL.definirOferta(PLANO_POR_OPCAO[op]);
+  }
+
+  function avisar(msg) {
+    if (elAviso) elAviso.textContent = msg;
+  }
+
+  function selecionar(op, origem) {
+    if (!PRECO.hasOwnProperty(op)) return;
+    if (op !== estado.opcao) {
+      estado.opcao = op;
+      estado.escolhas = estado.escolhas.slice(0, op === 'kit' ? 0 : qtdDe(op));
+      FUNIL.definirOferta(PLANO_POR_OPCAO[op]);
+      FUNIL.evento('select_offer', { plan: PLANO_POR_OPCAO[op], value: precoDe(op), origem: origem || 'seletor' });
+    }
+    atualizarOferta();
+  }
+
+  function alternarFragrancia(chave) {
+    if (estado.opcao === 'kit') return;
+    var i = estado.escolhas.indexOf(chave);
+    if (estado.opcao === '1') {
+      estado.escolhas = [chave];
+    } else if (i !== -1) {
+      estado.escolhas.splice(i, 1);
+    } else {
+      if (estado.escolhas.length >= 2) estado.escolhas.shift();   // troca a mais antiga
+      estado.escolhas.push(chave);
+    }
+    atualizarOferta();
+  }
+
+  function irParaSeletor() {
+    rolarPara(elSeletor, 'center');
+  }
+
+  function pedirEscolha() {
+    var faltam = quantidade() - pedidoAtual().produtos.length;
+    avisar(faltam === 1 && quantidade() === 1 ? 'Escolha a fragrância para continuar.'
+      : 'Escolha mais ' + faltam + ' fragrância' + (faltam > 1 ? 's' : '') + ' para continuar.');
+    irParaSeletor();
+    if (elEscolha) {
+      elEscolha.classList.remove('bm-escolha--alerta');
+      void elEscolha.offsetWidth;                       // reinicia a animação
+      elEscolha.classList.add('bm-escolha--alerta');
+    }
+  }
+
+  var ultimoClique = 0;
+  function comprar(botao) {
+    var agora = Date.now();
+    if (agora - ultimoClique < 400) return;             // clique duplo
+    ultimoClique = agora;
+
+    var plano = botao.getAttribute('data-plano');
+    var cta = botao.getAttribute('data-cta') || 'botao';
+    if (plano) selecionar(plano, 'cta_' + cta);
+
+    var pedido = pedidoAtual();
+    FUNIL.evento('click_buy', {
+      cta: cta, plan: pedido.plan, value: pedido.total / 100, products: pedido.produtos
+    });
+
+    if (!pedido.completo) { pedirEscolha(); return; }
+
+    if (CONFIG.CHECKOUT_URL) { window.location.href = CONFIG.CHECKOUT_URL; return; }
 
     /* checkout.js escuta este evento e abre o fluxo do PIX */
     window.dispatchEvent(new CustomEvent('bodyman:checkout', { detail: pedido }));
-
-    if(!window.BodymanCheckout){
-      elAviso.textContent = 'Checkout indisponível no momento. Tente novamente em instantes.';
-      console.error('[bodyman] checkout.js não carregou.');
+    if (!window.BodymanCheckout) {
+      avisar('Checkout indisponível no momento. Recarregue a página ou fale com a gente no WhatsApp.');
+      if (window.console) console.error('[bodyman] checkout.js não carregou.');
     }
-  });
-
-  /* ---------------- CTA fixo do mobile ---------------- */
-  var resumoEl = document.getElementById('bm-resumo');
-  function checarSticky(){
-    var r = resumoEl.getBoundingClientRect();
-    var resumoVisivel = r.top < window.innerHeight && r.bottom > 0;
-    elSticky.setAttribute('data-visivel',
-      (window.pageYOffset > 500 && !resumoVisivel) ? 'true' : 'false');
   }
-  window.addEventListener('scroll', checarSticky, { passive:true });
-  window.addEventListener('resize', checarSticky);
 
-  /* ---------------- entrada dos elementos ao rolar ---------------- */
-  function prepararEntrada(){
-    var grupos = [
-      document.querySelectorAll('.bm-figure'),
-      document.querySelectorAll('.bm-slab-txt'),
-      document.querySelectorAll('.bm-preco'),
-      document.querySelectorAll('.bm-stat'),
-      document.querySelectorAll('.bm-porque-card'),
-      document.querySelectorAll('.bm-trio-frascos')
-    ];
-    var alvos = [];
-    grupos.forEach(function(g){
-      Array.prototype.forEach.call(g, function(el, i){
-        el.classList.add('bm-reveal');
-        el.style.setProperty('--atraso-entrada', (i * 0.09) + 's');
-        alvos.push(el);
+  function ligarSeletor() {
+    each('.bm-opcao[data-opcao]', function (b) {
+      b.addEventListener('click', function () { selecionar(b.getAttribute('data-opcao'), 'seletor'); });
+    });
+    each('.bm-chip[data-fragrancia]', function (c) {
+      c.addEventListener('click', function () { alternarFragrancia(c.getAttribute('data-fragrancia')); });
+    });
+    each('[data-plano-kit]', function (b) {
+      b.addEventListener('click', function () { selecionar('kit', 'upsell'); });
+    });
+    each('[data-ir-seletor]', function (b) {
+      b.addEventListener('click', irParaSeletor);
+    });
+    each('[data-escolher]', function (b) {
+      b.addEventListener('click', function () {
+        selecionar('1', 'fragrancia');
+        estado.escolhas = [b.getAttribute('data-escolher')];
+        atualizarOferta();
+        irParaSeletor();
       });
     });
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-comprar]') : null;
+      if (b) comprar(b);
+    });
+  }
 
-    if(!('IntersectionObserver' in window) ||
-       window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-      alvos.forEach(function(el){ el.classList.add('bm-visivel'); });
+  /* ================================================================
+     avaliações
+     ================================================================ */
+  var CORES_AVATAR = ['#4A6FA5', '#6B7B8C', '#3E7C64', '#9A6B4F', '#6E5E9C', '#2F6F8F'];
+
+  function numeroOuNulo(v) {
+    var n = Number(v);
+    return v === null || v === undefined || v === '' || isNaN(n) ? null : Math.max(1, Math.min(5, n));
+  }
+
+  function normalizarAvaliacao(r) {
+    var fotos = (r.fotos || r.photos || []).map(function (f) {
+      return typeof f === 'string' ? { src: f, mini: f } : f;
+    }).filter(function (f) { return f && f.src; });
+    return {
+      nome: String(r.nome || r.name || '').trim(),
+      nota: numeroOuNulo(r.nota !== undefined ? r.nota : r.rating),
+      texto: String(r.texto || r.text || '').trim(),
+      data: String(r.data || r.date || '').trim(),
+      produto: String(r.produto || r.product || '').trim(),
+      idade: r.idade || r.age || null,
+      fotos: fotos,
+      fotoCliente: r.fotoCliente || r.customerPhoto || '',
+      verificada: Boolean(r.verificada || r.verified),
+      destaque: Boolean(r.destaque || r.featured),
+      iniciais: r.iniciais || r.initials || ''
+    };
+  }
+
+  var AVALIACOES = (window.BM_AVALIACOES || [])
+    .map(normalizarAvaliacao)
+    .filter(function (r) { return r.texto || r.fotos.length; });
+
+  /* todas as fotos de clientes, na ordem da lista (usadas no visualizador) */
+  var FOTOS_CLIENTES = [];
+  AVALIACOES.forEach(function (r) {
+    r.fotos.forEach(function (f) {
+      f.indice = FOTOS_CLIENTES.length;
+      FOTOS_CLIENTES.push({ src: f.src, mini: f.mini, w: f.w, h: f.h, legenda: (r.nome || 'Foto enviada por cliente') + (r.produto ? ' · ' + r.produto : '') });
+    });
+  });
+
+  function notaMedia() {
+    if (typeof CONFIG.AVERAGE_RATING === 'number') return CONFIG.AVERAGE_RATING;
+    var notas = AVALIACOES.filter(function (r) { return r.nota; });
+    if (!notas.length) return null;
+    var soma = notas.reduce(function (s, r) { return s + r.nota; }, 0);
+    return Math.round(soma / notas.length * 10) / 10;
+  }
+
+  function estrelas(nota) {
+    return '<span class="bm-stars" role="img" aria-label="Nota ' + nota + ' de 5">★★★★★' +
+      '<i style="width:' + (nota / 5 * 100) + '%">★★★★★</i></span>';
+  }
+
+  function dataBR(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+  }
+
+  var ICONE_PESSOA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>';
+
+  function avatar(r, i) {
+    if (r.fotoCliente) {
+      return '<span class="bm-av-avatar"><img src="' + escapar(r.fotoCliente) + '" alt="" width="44" height="44" loading="lazy" decoding="async"></span>';
+    }
+    var ini = r.iniciais || r.nome.split(/\s+/).filter(Boolean).slice(0, 2)
+      .map(function (p) { return p.charAt(0); }).join('').toUpperCase();
+    return '<span class="bm-av-avatar" style="background:' + CORES_AVATAR[i % CORES_AVATAR.length] + '" aria-hidden="true">' +
+      (ini ? escapar(ini) : ICONE_PESSOA) + '</span>';
+  }
+
+  function botaoFoto(f, classe) {
+    var w = f.w || 360, h = f.h || 480;
+    return '<button type="button" class="' + classe + '" data-foto="' + f.indice + '" aria-label="Ampliar foto enviada por cliente">' +
+      '<img src="' + escapar(f.mini || f.src) + '" alt="Foto do produto enviada por cliente" width="' + w + '" height="' + h + '" loading="lazy" decoding="async">' +
+      '</button>';
+  }
+
+  function cardAvaliacao(r, i) {
+    var meta = [r.idade ? r.idade + ' anos' : '', dataBR(r.data), r.produto].filter(Boolean).join(' · ');
+    return '<article class="bm-av' + (r.texto ? '' : ' bm-av--so-foto') + '">' +
+      '<div class="bm-av-topo">' + avatar(r, i) +
+        '<div class="bm-av-quem"><p class="bm-av-nome">' + escapar(r.nome || 'Cliente') + '</p>' +
+        (meta ? '<p class="bm-av-meta">' + escapar(meta) + '</p>' : '') + '</div>' +
+        (r.verificada ? '<span class="bm-av-verif">Compra verificada</span>' : '') +
+      '</div>' +
+      (r.nota ? estrelas(r.nota) : '') +
+      (r.texto ? '<p class="bm-av-texto">' + escapar(r.texto) + '</p>' : '') +
+      (r.fotos.length ? '<div class="bm-av-fotos">' + r.fotos.map(function (f) { return botaoFoto(f, 'bm-av-foto'); }).join('') + '</div>' : '') +
+      (!r.texto && r.fotos.length ? '<p class="bm-av-legenda">Foto enviada por cliente</p>' : '') +
+    '</article>';
+  }
+
+  function cardDestaque(r) {
+    var foto = r.fotos[0];
+    var soFoto = foto && !r.nome && !r.texto && !r.nota;
+    return '<article class="bm-dest' + (foto ? '' : ' bm-dest--texto') + (soFoto ? ' bm-dest--so-foto' : '') + '">' +
+      (foto ? botaoFoto(foto, 'bm-dest-foto') : '') +
+      (soFoto ? '' :
+        '<div class="bm-dest-info">' +
+          (r.nota ? estrelas(r.nota) : '') +
+          (r.nome || !foto ? '<p class="bm-dest-nome">' + escapar(r.nome || 'Cliente') + (r.verificada ? ' <span class="bm-av-verif">Verificada</span>' : '') + '</p>' : '') +
+          '<p class="bm-dest-texto">' + escapar(r.texto || 'Foto enviada por cliente') + '</p>' +
+        '</div>') +
+    '</article>';
+  }
+
+  var filtroAtual = 'todas';
+  var limite = 6;
+  var POR_PAGINA = 6;
+
+  function filtrar(f) {
+    return AVALIACOES.filter(function (r) {
+      if (f === 'fotos') return r.fotos.length > 0;
+      if (f === '5' || f === '4' || f === '3' || f === '2' || f === '1') return r.nota !== null && Math.round(r.nota) === Number(f);
+      return true;
+    });
+  }
+
+  /* Na aba "Todas", fotos sem comentário já aparecem na faixa "Fotos de
+     clientes" logo acima, então a lista mostra só quem escreveu algo. */
+  function listaParaExibir(f) {
+    var lista = filtrar(f);
+    if (f === 'todas' && FOTOS_CLIENTES.length) {
+      var comTexto = lista.filter(function (r) { return r.texto; });
+      if (comTexto.length) return comTexto;
+    }
+    return lista;
+  }
+
+  function renderMidia() {
+    var caixa = document.getElementById('bm-av-midia');
+    var trilho = document.getElementById('bm-av-midia-trilho');
+    if (!caixa || !trilho || !FOTOS_CLIENTES.length) return;
+    trilho.innerHTML = FOTOS_CLIENTES.map(function (f, i) {
+      return '<button type="button" class="bm-av-midia-foto" data-foto="' + i + '" aria-label="Ampliar foto ' + (i + 1) + ' de cliente">' +
+        '<img src="' + escapar(f.mini || f.src) + '" alt="Foto do produto enviada por cliente" width="' + (f.w || 360) + '" height="' + (f.h || 480) + '" loading="lazy" decoding="async"></button>';
+    }).join('');
+    texto(document.getElementById('bm-av-midia-qtd'), '(' + FOTOS_CLIENTES.length + ')');
+    caixa.hidden = false;
+  }
+
+  function renderLista() {
+    var lista = listaParaExibir(filtroAtual);
+    var el = document.getElementById('bm-av-lista');
+    var mais = document.getElementById('bm-av-mais');
+    if (!el) return;
+    el.innerHTML = lista.slice(0, limite).map(cardAvaliacao).join('') ||
+      '<p class="bm-av-vazio">Nenhuma avaliação neste filtro.</p>';
+    if (mais) {
+      var restantes = lista.length - limite;
+      mais.hidden = restantes <= 0;
+      mais.textContent = 'Ver mais avaliações (' + Math.max(restantes, 0) + ')';
+    }
+  }
+
+  function renderAvaliacoes() {
+    var secao = document.getElementById('avaliacoes');
+    var media = notaMedia();
+
+    if (!AVALIACOES.length) {
+      /* sem avaliações, sem nota nem bloco de prova social */
+      each('.bm-nota, .bm-prova', function (el) { el.hidden = true; });
       return;
     }
 
-    var obs = new IntersectionObserver(function(entradas){
-      entradas.forEach(function(e){
-        if(e.isIntersecting){
-          e.target.classList.add('bm-visivel');
-          obs.unobserve(e.target);
-        }
-      });
-    }, { rootMargin:'0px 0px -12% 0px', threshold:0.12 });
+    each('[data-nota]', function (el) { el.textContent = media ? media.toFixed(1).replace('.', ',') : ''; });
+    each('[data-estrelas]', function (el) { el.style.width = (media ? media / 5 * 100 : 0) + '%'; });
+    if (!media) each('.bm-nota .bm-stars, .bm-prova-nota .bm-stars, .bm-av-media .bm-stars', function (el) { el.hidden = true; });
 
-    alvos.forEach(function(el){ obs.observe(el); });
+    /* destaques logo abaixo da oferta (até 3) */
+    var destaques = AVALIACOES.filter(function (r) { return r.destaque; });
+    if (!destaques.length) destaques = AVALIACOES.filter(function (r) { return r.fotos.length; });
+    if (!destaques.length) destaques = AVALIACOES.slice();
+    var elDest = document.getElementById('bm-destaques');
+    if (elDest) {
+      destaques = destaques.slice(0, 3);
+      elDest.innerHTML = destaques.map(cardDestaque).join('');
+      var soFotos = destaques.every(function (r) { return r.fotos.length && !r.nome && !r.texto && !r.nota; });
+      var legenda = document.getElementById('bm-destaques-legenda');
+      if (legenda) legenda.hidden = !soFotos;
+    }
+
+    if (!secao) return;
+    secao.hidden = false;
+
+    var comNota = AVALIACOES.filter(function (r) { return r.nota; });
+    var comFoto = AVALIACOES.filter(function (r) { return r.fotos.length; });
+    var base = [];
+    if (comNota.length) base.push(comNota.length + (comNota.length === 1 ? ' avaliação com nota' : ' avaliações com nota'));
+    if (comFoto.length) base.push(comFoto.length + (comFoto.length === 1 ? ' foto de cliente' : ' fotos de clientes'));
+    texto(document.getElementById('bm-av-base'), base.join(' · '));
+
+    var barras = document.getElementById('bm-av-barras');
+    if (barras) {
+      var html = '';
+      for (var n = 5; n >= 1; n--) {
+        var qtd = filtrar(String(n)).length;
+        var pct = comNota.length ? Math.round(qtd / comNota.length * 100) : 0;
+        html += '<div class="bm-av-barra"><span>' + n + ' ★</span>' +
+          '<span class="bm-av-trilho"><i style="width:' + pct + '%"></i></span><span>' + qtd + '</span></div>';
+      }
+      barras.innerHTML = html;
+      barras.hidden = !comNota.length;
+    }
+
+    each('.bm-filtro[data-filtro]', function (b) {
+      var f = b.getAttribute('data-filtro');
+      var qtd = filtrar(f).length;
+      if (f !== 'todas' && !qtd) { b.hidden = true; return; }
+      b.innerHTML = escapar(b.textContent.replace(/\s*\(\d+\)$/, '')) + ' <span>(' + qtd + ')</span>';
+      b.addEventListener('click', function () {
+        filtroAtual = f;
+        limite = POR_PAGINA;
+        each('.bm-filtro[data-filtro]', function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        renderLista();
+      });
+    });
+
+    var mais = document.getElementById('bm-av-mais');
+    if (mais) mais.addEventListener('click', function () { limite += POR_PAGINA; renderLista(); });
+
+    renderMidia();
+    renderLista();
   }
 
-  /* ---------------- início ---------------- */
-  preencherValores();
-  preencherLancamento();
-  preencherProvaSocial();
-  aplicarEnvio();
-  setInterval(aplicarEnvio, 60000);   /* mantém a mensagem e o tempo restante corretos */
-  renderAvaliacoes();
-  atualizar();
-  checarSticky();
-  prepararEntrada();
-  ligarParallax();
+  /* ================================================================
+     visualizador de fotos (toque para ampliar, deslize para trocar)
+     ================================================================ */
+  var lb = null, lbLista = [], lbIndice = 0, lbFoco = null;
 
-  /* superfície pública mínima usada pelo checkout.js */
-  window.BODYMAN = { pedidoAtual: pedidoAtual, statusEnvio: statusEnvio, brl: brl };
+  function criarLightbox() {
+    lb = document.createElement('div');
+    lb.className = 'bm-lb';
+    lb.setAttribute('role', 'dialog');
+    lb.setAttribute('aria-modal', 'true');
+    lb.setAttribute('aria-label', 'Foto ampliada');
+    lb.hidden = true;
+    lb.innerHTML =
+      '<button type="button" class="bm-lb-x" data-lb="fechar" aria-label="Fechar">&times;</button>' +
+      '<button type="button" class="bm-lb-seta bm-lb-seta--ant" data-lb="-1" aria-label="Foto anterior">&#8249;</button>' +
+      '<figure class="bm-lb-fig"><img alt=""><figcaption></figcaption></figure>' +
+      '<button type="button" class="bm-lb-seta bm-lb-seta--prox" data-lb="1" aria-label="Próxima foto">&#8250;</button>';
+    document.body.appendChild(lb);
+
+    lb.addEventListener('click', function (e) {
+      var acao = e.target.getAttribute && e.target.getAttribute('data-lb');
+      if (acao === 'fechar' || e.target === lb) fecharLightbox();
+      else if (acao) mostrarFoto(lbIndice + Number(acao));
+    });
+    document.addEventListener('keydown', function (e) {
+      if (!lb || lb.hidden) return;
+      if (e.key === 'Escape') fecharLightbox();
+      else if (e.key === 'ArrowRight') mostrarFoto(lbIndice + 1);
+      else if (e.key === 'ArrowLeft') mostrarFoto(lbIndice - 1);
+    });
+    var x0 = null;
+    lb.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener('touchend', function (e) {
+      if (x0 === null) return;
+      var dx = e.changedTouches[0].clientX - x0;
+      x0 = null;
+      if (Math.abs(dx) > 45) mostrarFoto(lbIndice + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+  }
+
+  function mostrarFoto(i) {
+    if (!lbLista.length) return;
+    lbIndice = (i + lbLista.length) % lbLista.length;
+    var f = lbLista[lbIndice];
+    var img = lb.querySelector('img');
+    img.src = f.src;
+    img.alt = f.alt || f.legenda || 'Foto do produto';
+    lb.querySelector('figcaption').textContent = f.legenda + (lbLista.length > 1 ? '  ·  ' + (lbIndice + 1) + '/' + lbLista.length : '');
+    each('.bm-lb-seta', function (s) { s.hidden = lbLista.length < 2; }, lb);
+  }
+
+  function abrirLightbox(lista, i) {
+    if (!lista.length) return;
+    if (!lb) criarLightbox();
+    lbFoco = document.activeElement;
+    lbLista = lista;
+    lb.hidden = false;
+    document.documentElement.classList.add('bm-travado');
+    mostrarFoto(i || 0);
+    var x = lb.querySelector('.bm-lb-x');
+    if (x) x.focus();
+  }
+
+  function fecharLightbox() {
+    if (!lb || lb.hidden) return;
+    lb.hidden = true;
+    document.documentElement.classList.remove('bm-travado');
+    if (lbFoco && lbFoco.focus) lbFoco.focus();
+  }
+
+  function ligarFotosClientes() {
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-foto]') : null;
+      if (!b) return;
+      abrirLightbox(FOTOS_CLIENTES, Number(b.getAttribute('data-foto')));
+    });
+  }
+
+  /* ================================================================
+     carrossel "Veja de perto" + foto da embalagem
+     ================================================================ */
+  var ICONE_CAMERA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+
+  function montarDePerto() {
+    var secao = document.getElementById('fotos');
+    var trilho = document.getElementById('bm-perto-trilho');
+    var dots = document.getElementById('bm-perto-dots');
+    if (!secao || !trilho) return;
+
+    var reais = FOTOS_DE_PERTO.filter(function (f) { return f.src; });
+    var slots = PREVIEW ? FOTOS_DE_PERTO : reais;
+    if (!slots.length) return;                 /* nada para mostrar: a seção continua oculta */
+
+    var visor = reais.map(function (f) { return { src: f.src, legenda: f.titulo, alt: f.alt }; });
+    var posReal = 0;
+    trilho.innerHTML = slots.map(function (f) {
+      if (f.src) {
+        var i = posReal++;
+        return '<li class="bm-car-slide"><button type="button" class="bm-car-foto" data-perto="' + i + '" aria-label="Ampliar: ' + escapar(f.titulo) + '">' +
+          '<img src="' + escapar(f.src) + '" alt="' + escapar(f.alt || f.titulo) + '" loading="lazy" decoding="async"></button>' +
+          '<p class="bm-car-legenda">' + escapar(f.titulo) + '</p></li>';
+      }
+      return '<li class="bm-car-slide"><div class="bm-car-vazio">' + ICONE_CAMERA +
+        '<b>' + escapar(f.titulo) + '</b><span>Espaço para foto real — preencha FOTOS_DE_PERTO no script.js</span></div></li>';
+    }).join('');
+    secao.hidden = false;
+
+    trilho.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-perto]') : null;
+      if (b) abrirLightbox(visor, Number(b.getAttribute('data-perto')));
+    });
+
+    var slides = trilho.children;
+    if (dots) {
+      var h = '';
+      for (var i = 0; i < slides.length; i++) h += '<button type="button" class="bm-car-dot" data-ir="' + i + '" aria-label="Foto ' + (i + 1) + '"></button>';
+      dots.innerHTML = h;
+    }
+
+    function passo() { return slides[0] ? slides[0].getBoundingClientRect().width : trilho.clientWidth; }
+    function indiceAtual() { return Math.round(trilho.scrollLeft / Math.max(passo(), 1)); }
+    function marcar() {
+      var atual = indiceAtual();
+      each('.bm-car-dot', function (d, i) { d.setAttribute('aria-current', i === atual ? 'true' : 'false'); }, dots);
+    }
+    function irPara(i) {
+      var alvo = Math.max(0, Math.min(slides.length - 1, i));
+      var left = slides[alvo].offsetLeft - trilho.offsetLeft;
+      try { trilho.scrollTo({ left: left, behavior: 'smooth' }); } catch (e) { trilho.scrollLeft = left; }
+    }
+
+    each('[data-car]', function (b) {
+      b.addEventListener('click', function () { irPara(indiceAtual() + Number(b.getAttribute('data-car'))); });
+    }, secao);
+    if (dots) dots.addEventListener('click', function (e) {
+      var d = e.target.closest ? e.target.closest('[data-ir]') : null;
+      if (d) irPara(Number(d.getAttribute('data-ir')));
+    });
+    var pendente = false;
+    trilho.addEventListener('scroll', function () {
+      if (pendente) return;
+      pendente = true;
+      requestAnimationFrame(function () { pendente = false; marcar(); });
+    }, { passive: true });
+    marcar();
+    var nav = secao.querySelector('.bm-car-nav');
+    if (nav) nav.hidden = slides.length < 2;
+  }
+
+  function montarEmbalagem() {
+    var fig = document.getElementById('bm-embalagem');
+    if (!fig) return;
+    if (FOTO_EMBALAGEM.src) {
+      fig.innerHTML = '<img src="' + escapar(FOTO_EMBALAGEM.src) + '" alt="' + escapar(FOTO_EMBALAGEM.alt) + '" loading="lazy" decoding="async">' +
+        '<figcaption>Foto real da embalagem de um pedido</figcaption>';
+      fig.hidden = false;
+    } else if (PREVIEW) {
+      fig.innerHTML = '<div class="bm-car-vazio">' + ICONE_CAMERA + '<b>Foto real da embalagem</b>' +
+        '<span>Preencha FOTO_EMBALAGEM no script.js</span></div>';
+      fig.hidden = false;
+    }
+  }
+
+  /* ================================================================
+     barra fixa de compra (celular): aparece quando nenhum botão de
+     compra está na tela e some com o checkout ou o visualizador abertos
+     ================================================================ */
+  function ligarBarraFixa() {
+    var barra = document.getElementById('bm-sticky');
+    if (!barra) return;
+    var alvos = [];
+    each('[data-comprar]', function (b) { if (!b.hasAttribute('data-sticky-btn')) alvos.push(b); });
+    var visiveis = 0;
+
+    function aplicar() {
+      var mostrar = visiveis === 0;
+      barra.setAttribute('data-visivel', mostrar ? 'true' : 'false');
+      document.documentElement.classList.toggle('bm-com-barra', mostrar);
+      /* no desktop, o balão do WhatsApp se recolhe para não cobrir um botão de compra */
+      document.documentElement.classList.toggle('bm-cta-visivel', !mostrar);
+    }
+
+    if ('IntersectionObserver' in window) {
+      var estados = [];
+      var obs = new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (en) {
+          var i = alvos.indexOf(en.target);
+          if (i !== -1) estados[i] = en.isIntersecting && en.target.offsetParent !== null;
+        });
+        visiveis = estados.filter(Boolean).length;
+        aplicar();
+      }, { threshold: 0.4 });
+      alvos.forEach(function (a, i) { estados[i] = false; obs.observe(a); });
+    } else {
+      var checar = function () {
+        visiveis = alvos.filter(function (a) {
+          var r = a.getBoundingClientRect();
+          return r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+        }).length;
+        aplicar();
+      };
+      window.addEventListener('scroll', checar, { passive: true });
+      window.addEventListener('resize', checar);
+      checar();
+    }
+  }
+
+  /* ================================================================
+     início — cada etapa isolada: um erro não impede as outras
+     ================================================================ */
+  function etapa(fn) {
+    try { fn(); } catch (e) { if (window.console) console.error('[bodyman]', e); }
+  }
+
+  etapa(preencherValores);
+  etapa(preencherTopo);
+  etapa(aplicarEnvio);
+  etapa(ligarSeletor);
+  etapa(atualizarOferta);
+  etapa(renderAvaliacoes);
+  etapa(ligarFotosClientes);
+  etapa(montarDePerto);
+  etapa(montarEmbalagem);
+  etapa(ligarBarraFixa);
+  setInterval(function () { etapa(aplicarEnvio); }, 60000);   /* mantém o horário de corte correto */
+
+  /* superfície pública usada pelo checkout.js */
+  window.BODYMAN = {
+    pedidoAtual: pedidoAtual,
+    statusEnvio: statusEnvio,
+    textoEnvioPedido: textoEnvioPedido,
+    brl: brl,
+    selecionar: selecionar,
+    irParaSeletor: irParaSeletor,
+    config: CONFIG
+  };
+
+  etapa(function () {
+    var p = pedidoAtual();
+    FUNIL.evento('view_product', { plan: p.plan, value: p.total / 100, products: p.produtos }, { unico: 'view_product' });
+  });
 })();
