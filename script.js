@@ -63,16 +63,33 @@
   var REVIEWS = [
     /* ---- Fotos reais enviadas por clientes ----
        Nome, nota, comentário e data ficaram em branco porque não temos esses
-       dados. PREENCHER com as informações reais de cada cliente quando tiver. */
+       dados. PREENCHER com as informações reais de cada cliente quando tiver.
+       A ordem aqui é a ordem em que as fotos aparecem no site; as 3 com
+       featured:true ficam em destaque logo abaixo do botão de compra. */
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',   // frascos dentro da caixa de envio
+      photos:[{ src:'img/clientes/cliente-6.webp', thumb:'img/clientes/cliente-6-p.webp' }],
+      verified:false, orderRef:'', featured:true },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
-      photos:[{ src:'img/clientes/cliente-2.webp', thumb:'img/clientes/cliente-2-p.webp' }],
+      photos:[{ src:'img/clientes/cliente-8.webp', thumb:'img/clientes/cliente-8-p.webp' }],
       verified:false, orderRef:'', featured:true },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-5.webp', thumb:'img/clientes/cliente-5-p.webp' }],
       verified:false, orderRef:'', featured:true },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
+      photos:[{ src:'img/clientes/cliente-2.webp', thumb:'img/clientes/cliente-2-p.webp' }],
+      verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Enigma',   // a foto mostra só o Enigma: CONFIRMAR o que o cliente comprou
+      photos:[{ src:'img/clientes/cliente-10.webp', thumb:'img/clientes/cliente-10-p.webp' }],
+      verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-3.webp', thumb:'img/clientes/cliente-3-p.webp' }],
-      verified:false, orderRef:'', featured:true },
+      verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',
+      photos:[{ src:'img/clientes/cliente-7.webp', thumb:'img/clientes/cliente-7-p.webp' }],
+      verified:false, orderRef:'' },
+    { name:'', rating:null, text:'', date:'', product:'Kit completo',
+      photos:[{ src:'img/clientes/cliente-9.webp', thumb:'img/clientes/cliente-9-p.webp' }],
+      verified:false, orderRef:'' },
     { name:'', rating:null, text:'', date:'', product:'Kit completo',
       photos:[{ src:'img/clientes/cliente-1.webp', thumb:'img/clientes/cliente-1-p.webp' }],
       verified:false, orderRef:'' },
