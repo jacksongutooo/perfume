@@ -10,7 +10,7 @@ const {
   PLANS, PRODUCTS, PIX_EXPIRES_IN_DAYS, PAYMENTS_ENABLED, IS_PRODUCTION,
   ORDER_PREFIX, distribuirCentavos
 } = require('./_config');
-const { validarPlano, validarCliente, validarEndereco, limparUTM } = require('./_validate');
+const { validarPlano, validarCliente, validarEndereco, limparUTM, limparContexto } = require('./_validate');
 const store = require('./_store');
 const blackcat = require('./_blackcat');
 
@@ -55,6 +55,7 @@ module.exports = async function handler(req, res) {
   if (end.erro) return erroAmigavel(res, 400, end.erro);
 
   const utm = limparUTM(corpo.utm);
+  const contexto = limparContexto(corpo.context);   // só para análise do funil
   const config = PLANS[plano.plan];
   const amount = config.amount;                       // fonte oficial do preço
   const itens = montarItens(plano.produtos, amount);
@@ -81,6 +82,7 @@ module.exports = async function handler(req, res) {
     customer: cli.customer,
     shipping: end.shipping,
     utm,
+    context: contexto,
     transactionId: null,
     createdAt: new Date().toISOString()
   };
@@ -91,6 +93,7 @@ module.exports = async function handler(req, res) {
     const fakeId = 'TESTE-' + externalRef;
     const pedido = Object.assign({}, pedidoBase, { transactionId: fakeId, testMode: true });
     await store.salvarPedido(pedido).catch((e) => console.error('[create-payment] falha ao salvar', e.message));
+    await store.indexarPedido(pedido).catch((e) => console.error('[create-payment] falha ao indexar', e.message));
     return json(res, 200, {
       ok: true, testMode: true, externalRef, transactionId: fakeId, token: publicToken,
       amount, quantity: config.quantity, products: plano.produtos,
@@ -169,6 +172,13 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     // O PIX já existe: não dá para abortar a compra por falha de gravação.
     console.error('[create-payment] PIX criado mas pedido NÃO foi salvo:', externalRef, venda.transactionId, e.message);
+  }
+
+  // Índice para listar PIX gerados/pendentes. Falha aqui nunca afeta a compra.
+  try {
+    await store.indexarPedido(pedido);
+  } catch (e) {
+    console.error('[create-payment] falha ao indexar pedido', externalRef, e.message);
   }
 
   console.log('[create-payment] pedido', externalRef, 'tx', venda.transactionId,

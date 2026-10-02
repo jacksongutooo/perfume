@@ -61,6 +61,8 @@ async function get(chave) {
 const chavePedido = (ref) => 'pedido:' + ref;
 const chaveTransacao = (id) => 'tx:' + id;
 const chaveIdempotencia = (id) => 'pago:' + id;
+const CHAVE_INDICE = 'pedidos:indice';           // sorted set: score = data de criação
+const indiceMemoria = new Map();
 
 async function salvarPedido(pedido) {
   await set(chavePedido(pedido.externalRef), JSON.stringify(pedido));
@@ -88,6 +90,50 @@ async function atualizarPedido(externalRef, mudancas) {
   return novo;
 }
 
+/**
+ * Índice dos pedidos por data de criação. Permite listar os PIX gerados
+ * (pagos e pendentes) para acompanhar o funil e recuperar pagamentos.
+ * Pedidos com mais de 60 dias saem do índice, como saem do banco.
+ */
+async function indexarPedido(pedido) {
+  const ref = pedido && pedido.externalRef;
+  if (!ref) return false;
+  const quando = Date.parse(pedido.createdAt) || Date.now();
+  const limite = Date.now() - TTL * 1000;
+  if (!PERSISTENTE) {
+    avisarMemoria();
+    indiceMemoria.set(ref, quando);
+    indiceMemoria.forEach((t, r) => { if (t < limite) indiceMemoria.delete(r); });
+    return true;
+  }
+  await Promise.all([
+    comando(['ZADD', CHAVE_INDICE, String(quando), ref]),
+    comando(['ZREMRANGEBYSCORE', CHAVE_INDICE, '-inf', String(limite)])
+  ]);
+  return true;
+}
+
+/** Pedidos mais recentes primeiro (até "limite"). */
+async function listarPedidos(limite) {
+  const n = Math.max(1, Math.min(Number(limite) || 200, 1000));
+  let refs;
+  if (!PERSISTENTE) {
+    refs = Array.from(indiceMemoria.entries()).sort((a, b) => b[1] - a[1]).slice(0, n).map((x) => x[0]);
+  } else {
+    refs = (await comando(['ZREVRANGE', CHAVE_INDICE, '0', String(n - 1)])) || [];
+  }
+  if (!refs.length) return [];
+  const brutos = PERSISTENTE
+    ? ((await comando(['MGET'].concat(refs.map(chavePedido)))) || [])
+    : refs.map((r) => memoria.get(chavePedido(r)) || null);
+  const pedidos = [];
+  brutos.forEach((b) => {
+    if (!b) return;
+    try { pedidos.push(typeof b === 'string' ? JSON.parse(b) : b); } catch (e) {}
+  });
+  return pedidos;
+}
+
 /** Idempotência: devolve true só na primeira vez que o transactionId é pago. */
 async function marcarPagamentoProcessado(transactionId) {
   return set(chaveIdempotencia(transactionId), new Date().toISOString(), { nx: true });
@@ -96,5 +142,5 @@ async function marcarPagamentoProcessado(transactionId) {
 module.exports = {
   PERSISTENTE,
   salvarPedido, lerPedido, lerPedidoPorTransacao, atualizarPedido,
-  marcarPagamentoProcessado
+  marcarPagamentoProcessado, indexarPedido, listarPedidos
 };

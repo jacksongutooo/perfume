@@ -128,7 +128,24 @@ function limparUTM(utm) {
   return saida;
 }
 
+/**
+ * Contexto da compra enviado pelo navegador, só para análise do funil
+ * (dispositivo, origem do tráfego, oferta, botão clicado). Nunca influencia
+ * preço nem pagamento. Campos desconhecidos são descartados.
+ */
+function limparContexto(contexto) {
+  const origem = contexto && typeof contexto === 'object' ? contexto : {};
+  const campos = ['device', 'app', 'source', 'medium', 'campaign', 'referrer', 'landing', 'offer', 'cta'];
+  const saida = {};
+  campos.forEach((c) => {
+    const v = texto(origem[c]).replace(/[<>"'`\\{}\u0000-\u001F]/g, '').slice(0, 80);
+    if (v) saida[c] = v;
+  });
+  if (saida.device && ['mobile', 'tablet', 'desktop'].indexOf(saida.device) === -1) delete saida.device;
+  return saida;
+}
+
 module.exports = {
-  validarPlano, validarCliente, validarEndereco, limparUTM,
+  validarPlano, validarCliente, validarEndereco, limparUTM, limparContexto,
   digitos, texto, cpfValido, emailValido, telefoneValido, cepValido, nomeValido, UFS
 };
