@@ -207,3 +207,12 @@ ambiente configuradas (cuidado: aí o PIX é real).
 - Revisar os trechos marcados com `CONFIRMAR` nas páginas de políticas e no FAQ
   (busque por `CONFIRMAR` nos arquivos .html).
 - Conferir se o KV está conectado na Vercel.
+
+## Publicação (Vercel)
+
+O site é publicado pela Vercel a partir da branch `main`. A Vercel só publica
+sozinha os commits feitos por uma conta com acesso ao projeto (a conta
+jacksongutooo do GitHub). Se um commit chegar com outro autor, a publicação
+fica bloqueada e o site continua na versão anterior. Nesse caso, faça qualquer
+commit pela sua conta (ou use "Redeploy" na Vercel) para publicar a versão
+mais recente da `main`.
