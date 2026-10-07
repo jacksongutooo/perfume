@@ -80,11 +80,11 @@ Ficam no array `REVIEWS` do `script.js`. Só use avaliações reais.
 
 ## Funil de eventos
 
-**Meta Pixel:** o site tem dois pixels, 2179392679290317 (original) e
-2207402056499689 (novo), no `<head>` do `index.html`. Os dois recebem os
-mesmos eventos. Para tirar um deles, apague a linha `fbq('init', 'ID')` e o
-`<noscript>` com o mesmo ID. Não cole o código do Meta de novo: isso
-duplicaria o PageView.
+**Meta Pixel:** 2207402056499689, no `<head>` do `index.html`. Para trocar
+de pixel, altere o ID na linha `fbq('init', 'ID')` e no `<noscript>`. Para
+somar outro pixel, acrescente uma linha `fbq('init', 'OUTRO_ID')` logo abaixo
+(e um `<noscript>` com o ID): todos os eventos vão para os dois. Não cole o
+código do Meta inteiro de novo: isso duplicaria o PageView.
 
 Cada evento vai para o Meta Pixel, para o `dataLayer` (Google Tag Manager) e
 para o GA4 (se `GA4_ID` estiver preenchido). Todos levam dispositivo
