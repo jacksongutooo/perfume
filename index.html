@@ -25,6 +25,9 @@
 <link rel="stylesheet" href="style.css?v=20261002">
 
 <!-- Meta Pixel Code -->
+<!-- Dois pixels: o original (2179392679290317) e o novo (2207402056499689).
+     O script do Meta carrega uma vez só; o PageView e todos os outros
+     eventos do site vão para os dois pixels, sem duplicar. -->
 <script>
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -35,10 +38,14 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '2179392679290317');
+fbq('init', '2207402056499689');
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=2179392679290317&ev=PageView&noscript=1"
+/></noscript>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
