@@ -39,6 +39,7 @@ scripts/servidor-local.js   servidor para testar no computador (não vai para o 
 | Google Analytics 4 | `site.js` → `GA4_ID` |
 | Preços exibidos | `script.js` → `CONFIG` **e** os valores escritos no `index.html` |
 | Preços cobrados | `api/_config.js` → `PLANS` (em centavos) |
+| Promoção do kit (% OFF no PIX) | `script.js` → `TRIPLE_PIX_DISCOUNT` **e** `api/_config.js` → `PLANS.triple` (ver "Promoção do kit") |
 | Avaliações | `script.js` → `REVIEWS` |
 | Fotos da seção "Veja o Bodyman de perto" e da embalagem | `index.html` (instruções no próprio código) |
 
@@ -49,6 +50,25 @@ ou "a preencher" é mostrado para o cliente.
 valores escritos no `index.html` (busque o valor antigo, ex.: `R$ 97,00`) e
 `PLANS` em `api/_config.js`. Os valores ficam no HTML para que a página nunca
 apareça com preço vazio enquanto o JavaScript carrega.
+
+### Promoção do kit
+
+Hoje: **15% OFF no PIX no kit completo**, de R$ 97,00 por R$ 82,45. Como o
+PIX é o único meio de pagamento, R$ 82,45 é o valor cobrado.
+
+A promoção aparece na faixa do topo, no selo da foto do kit, no preço do topo,
+no bloco escuro "Leve as 3 fragrâncias" (com o comparativo de preço por
+frasco), no cartão do kit no seletor, no aviso para quem escolhe 1 ou 2
+frascos, no resumo do pedido, no checkout, na barra fixa e no FAQ. Todos os
+números (preço por frasco, economia, diferença para 2 frascos, % mais barato)
+são calculados dos preços do `CONFIG`.
+
+- **Mudar o desconto:** `TRIPLE_PIX_DISCOUNT` no `script.js` e
+  `PLANS.triple.amount` no `api/_config.js` (97,00 × (100 − %) ÷ 100, em
+  centavos). Os dois precisam bater.
+- **Encerrar:** `TRIPLE_PIX_DISCOUNT: 0` e `amount: 9700`. Tudo que fala do
+  desconto some sozinho. Atualize também os valores escritos no `index.html`
+  (busque `R$ 82,45`) e o `"price"` dos dados estruturados no `<head>`.
 
 ### Ver o que falta preencher
 
@@ -172,7 +192,7 @@ confirmação automática do PIX e a listagem de pedidos não funcionam.
 ## Preços
 
 Definidos em `api/_config.js`, em centavos: `single 4990`, `double 7990`,
-`triple 9700`. O navegador envia apenas `plan`. Qualquer `amount`, `price` ou
+`triple 8245` (R$ 97,00 com 15% OFF no PIX). O navegador envia apenas `plan`. Qualquer `amount`, `price` ou
 `total` vindo do cliente é ignorado. Frete: `SHIPPING_AMOUNT = 0` (grátis em
 todas as opções).
 

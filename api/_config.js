@@ -7,7 +7,11 @@
 const PLANS = {
   single: { amount: 4990, quantity: 1, label: '1 Body Splash' },
   double: { amount: 7990, quantity: 2, label: '2 Body Splash' },
-  triple: { amount: 9700, quantity: 3, label: 'Kit Completo com 3' }
+  // Kit: preço cheio R$ 97,00 com 15% de desconto no PIX = R$ 82,45.
+  // O PIX é o único meio de pagamento, então este é o valor cobrado.
+  // Para encerrar a promoção: amount 9700 aqui e TRIPLE_PIX_DISCOUNT: 0
+  // no script.js (veja o README).
+  triple: { amount: 8245, quantity: 3, label: 'Kit Completo com 3' }
 };
 
 const PRODUCTS = {

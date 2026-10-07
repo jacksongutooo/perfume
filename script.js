@@ -20,7 +20,12 @@
   var CONFIG = {
     SINGLE_PRICE: 49.90,   // 1 frasco
     DOUBLE_PRICE: 79.90,   // 2 frascos
-    TRIPLE_PRICE: 97.00,   // kit com 3
+    TRIPLE_FULL_PRICE: 97.00,  // kit com 3, preço cheio
+
+    /* Promoção do kit: % de desconto no PIX. 0 = sem promoção (os selos de
+       desconto somem). O valor cobrado vem do servidor: ao mudar aqui, mude
+       também PLANS.triple em api/_config.js. Com 15%: R$ 82,45. */
+    TRIPLE_PIX_DISCOUNT: 15,
 
     /* Frete grátis a partir de quantos frascos. O servidor (api/_config.js,
        SHIPPING_AMOUNT = 0) não cobra frete em nenhuma opção e o checkout
@@ -166,6 +171,9 @@
   /* ================================================================
      preços
      ================================================================ */
+  CONFIG.TRIPLE_PRICE = Math.round(CONFIG.TRIPLE_FULL_PRICE * (100 - CONFIG.TRIPLE_PIX_DISCOUNT)) / 100;
+  var PROMO = CONFIG.TRIPLE_PIX_DISCOUNT > 0;
+
   var PRECO = { '1': CONFIG.SINGLE_PRICE, '2': CONFIG.DOUBLE_PRICE, 'kit': CONFIG.TRIPLE_PRICE };
   var MAPA = { single: '1', double: '2', triple: 'kit' };
   var PLANO_POR_OPCAO = { '1': 'single', '2': 'double', 'kit': 'triple' };
@@ -181,6 +189,9 @@
   function precoUnitario(op) { return PRECO[op] / qtdDe(op); }
   function economia(op) { return precoAvulso(op) - PRECO[op]; }
   var DIFERENCA_2_PARA_3 = CONFIG.TRIPLE_PRICE - CONFIG.DOUBLE_PRICE;
+  var DESCONTO_PIX = CONFIG.TRIPLE_FULL_PRICE - CONFIG.TRIPLE_PRICE;
+  /* quanto o frasco do kit sai mais barato que o frasco avulso, em % */
+  var MENOS_POR_FRASCO = Math.round((1 - precoUnitario('kit') / CONFIG.SINGLE_PRICE) * 100);
 
   function preencherValores() {
     function aplicar(attr, fn) {
@@ -194,6 +205,18 @@
     aplicar('data-econ', economia);
     aplicar('data-de', precoAvulso);
     each(document.querySelectorAll('[data-diff]'), function (el) { el.textContent = brl(DIFERENCA_2_PARA_3); });
+    each(document.querySelectorAll('[data-cheio]'), function (el) { el.textContent = brl(CONFIG.TRIPLE_FULL_PRICE); });
+    each(document.querySelectorAll('[data-desc-pix]'), function (el) { el.textContent = brl(DESCONTO_PIX); });
+    each(document.querySelectorAll('[data-off]'), function (el) { el.textContent = CONFIG.TRIPLE_PIX_DISCOUNT + '%'; });
+    each(document.querySelectorAll('[data-menos]'), function (el) { el.textContent = MENOS_POR_FRASCO + '%'; });
+    /* barras do comparativo: largura proporcional ao preço por frasco */
+    each(document.querySelectorAll('[data-barra]'), function (el) {
+      var op = MAPA[el.getAttribute('data-barra')];
+      if (op) el.style.width = Math.round(precoUnitario(op) / CONFIG.SINGLE_PRICE * 100) + '%';
+    });
+    /* sem promoção: some tudo que fala do desconto */
+    each(document.querySelectorAll('[data-promo]'), function (el) { el.hidden = !PROMO; });
+    each(document.querySelectorAll('[data-sem-promo]'), function (el) { el.hidden = PROMO; });
   }
 
   /* ================================================================
@@ -661,11 +684,30 @@
     if (elLista) elLista.innerHTML = html;
 
     var linhas = linhaResumo('Quantidade', qtd + (qtd > 1 ? ' frascos' : ' frasco') + ' · ' + (qtd * 200) + ' ml');
-    if (qtd > 1) linhas += linhaResumo('Desconto do kit', '−' + brl(economia(estado.opcao)), 'bm-eco');
+    if (kit && PROMO) {
+      linhas += linhaResumo('Preço do kit', brl(CONFIG.TRIPLE_FULL_PRICE));
+      linhas += linhaResumo(CONFIG.TRIPLE_PIX_DISCOUNT + '% OFF no PIX', '−' + brl(DESCONTO_PIX), 'bm-eco');
+    } else if (qtd > 1) {
+      linhas += linhaResumo('Desconto', '−' + brl(economia(estado.opcao)), 'bm-eco');
+    }
     linhas += linhaResumo('Frete', qtd >= CONFIG.FREE_SHIPPING_MIN_ITEMS ? '<span class="bm-gratis">Grátis</span>' : 'Calculado no checkout');
     if (elLinhas) elLinhas.innerHTML = linhas;
     if (elTotal) elTotal.textContent = brl(precoDe(estado.opcao));
     if (elFinal) elFinal.textContent = 'Finalizar compra — ' + brl(precoDe(estado.opcao));
+  }
+
+  /* escolheu 1 ou 2 frascos: mostra quanto falta para o kit */
+  function atualizarUpsell() {
+    if (!elUpsell) return;
+    elUpsell.hidden = estado.opcao === 'kit';
+    if (estado.opcao === 'kit') return;
+    var txt = document.getElementById('bm-upsell-txt');
+    if (!txt) return;
+    var falta = CONFIG.TRIPLE_PRICE - PRECO[estado.opcao];
+    var promo = PROMO ? ' com ' + CONFIG.TRIPLE_PIX_DISCOUNT + '% OFF no PIX' : '';
+    txt.innerHTML = estado.opcao === '2'
+      ? 'Por só <strong>+' + brl(falta) + '</strong> você leva o kit completo' + promo + ': as 3 fragrâncias, ' + brl(precoUnitario('kit')) + ' cada.'
+      : 'Por <strong>+' + brl(falta) + '</strong> você leva as 3 fragrâncias no kit completo' + promo + ': ' + brl(precoUnitario('kit')) + ' cada.';
   }
 
   function atualizarSticky() {
@@ -674,10 +716,11 @@
     var btn = document.getElementById('bm-sticky-btn');
     if (!titulo) return;
     var qtd = quantidade();
-    titulo.textContent = NOME_OPCAO[estado.opcao] + ' · ' + brl(precoDe(estado.opcao));
+    /* preço em cima (cabe em telas de 320 px); o que é, embaixo */
+    titulo.textContent = brl(precoDe(estado.opcao));
     sub.textContent = estado.opcao === 'kit'
-      ? '3 frascos · 600 ml · frete grátis'
-      : qtd + (qtd > 1 ? ' frascos · ' : ' frasco · ') + (qtd * 200) + ' ml · frete grátis';
+      ? (PROMO ? 'Kit com ' + CONFIG.TRIPLE_PIX_DISCOUNT + '% OFF no PIX' : 'Kit completo no PIX')
+      : qtd + (qtd > 1 ? ' frascos' : ' frasco') + ' no PIX';
     btn.textContent = estado.opcao === 'kit' ? 'Quero meu kit' : 'Comprar agora';
   }
 
@@ -685,7 +728,7 @@
     each(document.querySelectorAll('.bm-opcao[data-opcao]'), function (b) {
       b.setAttribute('aria-pressed', b.getAttribute('data-opcao') === estado.opcao ? 'true' : 'false');
     });
-    if (elUpsell) elUpsell.hidden = estado.opcao !== '2';
+    atualizarUpsell();
     montarSlots();
     atualizarResumo();
     atualizarSticky();
@@ -709,6 +752,9 @@
       frascos: quantidade(),
       volumeMl: quantidade() * 200,
       total: Math.round(precoDe(estado.opcao) * 100),   // centavos
+      /* só para exibir no resumo do checkout; quem cobra é o servidor */
+      cheio: estado.opcao === 'kit' && PROMO ? Math.round(CONFIG.TRIPLE_FULL_PRICE * 100) : 0,
+      descontoPct: estado.opcao === 'kit' && PROMO ? CONFIG.TRIPLE_PIX_DISCOUNT : 0,
       completo: itens.length === quantidade()
     };
   }

@@ -44,6 +44,8 @@
   --bm-erro:      #B3261E;
   --bm-wa:        #1FAF54;
   --bm-wa-esc:    #178F44;
+  --bm-promo:     #F2A516;   /* selos "15% OFF" (texto escuro por cima) */
+  --bm-promo-txt: #16181D;
 
   --bm-enigma:    #2B2B2B;
   --bm-midtown:   #3A86C8;
@@ -253,6 +255,86 @@ svg{flex:none;}
 .bm-sobre{font-size:12px;font-weight:750;letter-spacing:.16em;text-transform:uppercase;color:var(--bm-brand);margin:0 0 8px;}
 .bm-h2{font-size:clamp(25px,6.4vw,38px);font-weight:760;font-stretch:88%;line-height:1.08;letter-spacing:-.012em;margin:0 0 10px;text-wrap:balance;}
 .bm-lead{color:var(--bm-muted);font-size:16px;margin:0;}
+
+/* =====================================================================
+   PROMOÇÃO DO KIT (15% OFF no PIX)
+   Tudo com [data-promo] some quando TRIPLE_PIX_DISCOUNT = 0 (script.js).
+   ===================================================================== */
+.bm-faixa{
+  display:block;background:var(--bm-ink);color:#E9ECF1;text-align:center;text-decoration:none;
+  font-size:13px;line-height:1.35;padding:8px var(--bm-gutter);
+}
+.bm-faixa b{color:#fff;font-weight:750;}
+.bm-faixa > b:first-child{color:var(--bm-promo);}
+.bm-faixa s{color:#9AA1AD;}
+.bm-faixa:hover{background:#22252C;}
+
+.bm-off-pill,.bm-promo-selo{
+  display:inline-block;background:var(--bm-promo);color:var(--bm-promo-txt);border-radius:999px;
+  font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+}
+.bm-off-pill{font-size:11.5px;padding:3px 9px;vertical-align:1px;}
+.bm-preco-cheio{font-size:14px;color:var(--bm-muted);margin:0 0 6px;}
+.bm-preco-cheio s{color:var(--bm-muted);}
+.bm-preco-de .bm-preco-un{color:var(--bm-txt);}
+
+.bm-palco-off{
+  position:absolute;top:12px;right:var(--bm-gutter);z-index:1;
+  width:74px;height:74px;border-radius:50%;background:var(--bm-ink);color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;letter-spacing:.06em;line-height:1;text-align:center;
+  box-shadow:0 10px 22px -12px rgba(20,24,33,.6);transform:rotate(-8deg);
+}
+.bm-palco-off b{font-size:22px;color:var(--bm-promo);letter-spacing:-.01em;margin-bottom:2px;}
+.bm-palco-off small{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#C3C8D1;margin-top:3px;}
+
+.bm-cta-sub s{color:var(--bm-muted);}
+.bm-cta-sub b{color:var(--bm-txt);}
+
+/* bloco escuro da promoção, entre as fragrâncias e a oferta */
+.bm-promo{padding-top:0;}
+.bm-promo-in{
+  background:var(--bm-ink);color:#E9ECF1;border-radius:20px;padding:26px 18px 24px;
+  display:grid;gap:22px;
+}
+.bm-promo-selo{font-size:12.5px;padding:5px 11px;margin:0 0 12px;}
+.bm-promo .bm-h2{color:#fff;}
+.bm-promo-preco{font-size:15px;color:#C3C8D1;margin:0 0 16px;}
+.bm-promo-preco s{color:#9AA1AD;}
+.bm-promo-preco b{font-size:30px;font-weight:800;color:#fff;letter-spacing:-.015em;}
+.bm-promo-preco small{font-size:14px;font-weight:650;color:#C3C8D1;}
+.bm-promo-motivos{display:grid;gap:10px;font-size:14.5px;line-height:1.45;color:#C3C8D1;}
+.bm-promo-motivos li{position:relative;padding-left:26px;}
+.bm-promo-motivos li::before{
+  content:"";position:absolute;left:0;top:2px;width:18px;height:18px;border-radius:50%;
+  background:var(--bm-promo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316181D' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center/12px no-repeat;
+}
+.bm-promo-motivos b{color:#fff;font-weight:700;}
+
+/* comparativo de preço por frasco (uma série; valores escritos em cada linha) */
+.bm-comp{margin:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px;}
+.bm-comp-titulo{font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:#C3C8D1;margin:0 0 12px;}
+.bm-comp-lista{display:grid;gap:14px;}
+.bm-comp-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:6px 12px;}
+.bm-comp-nome{font-size:14px;font-weight:650;color:#C3C8D1;}
+.bm-comp-nome small{font-size:12px;font-weight:600;color:#9AA1AD;margin-left:4px;}
+.bm-comp-valor{grid-column:2;grid-row:1;font-size:15px;font-weight:750;color:#E9ECF1;white-space:nowrap;}
+.bm-comp-trilho{grid-column:1 / -1;grid-row:2;display:block;height:10px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;}
+.bm-comp-trilho i{display:block;height:100%;border-radius:0 4px 4px 0;background:#7A818C;}
+.bm-comp-item[data-destaque="true"] .bm-comp-nome{color:#fff;font-weight:750;}
+.bm-comp-item[data-destaque="true"] .bm-comp-valor{color:#fff;font-size:17px;}
+.bm-comp-item[data-destaque="true"] .bm-comp-trilho i{background:var(--bm-promo);}
+.bm-comp-nota{font-size:13.5px;color:#C3C8D1;margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);}
+.bm-comp-nota b{color:#fff;}
+.bm-promo .bm-promo-cta{margin:0;max-width:none;}
+.bm-promo-cta .bm-btn{box-shadow:0 10px 24px -10px rgba(27,91,209,.9);}
+.bm-promo .bm-cta-sub{color:#C3C8D1;}
+
+/* seletor e resumos */
+.bm-flag[data-promo]{background:var(--bm-promo);color:var(--bm-promo-txt);}
+.bm-opcao-preco s{font-size:12px;color:var(--bm-muted);white-space:nowrap;}
+.bm-co-pedido-off{font-size:12px;font-weight:700;color:var(--bm-ok);margin:2px 0 0;}
+.bm-co-pedido-total s{display:block;font-size:12px;font-weight:600;color:var(--bm-muted);text-align:right;}
 
 /* bloco de CTA no meio da página */
 .bm-cta-bloco{max-width:460px;margin:32px auto 0;text-align:center;}
@@ -569,6 +651,7 @@ svg{flex:none;}
 .bm-sticky-txt b{color:var(--bm-txt);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bm-sticky .bm-btn{flex:none;min-height:48px;padding:12px 18px;font-size:14.5px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;}
 .no-js .bm-sticky{display:none;}
+@media (max-width:359px){ .bm-sticky .bm-btn{padding:12px 14px;letter-spacing:.02em;} }
 
 /* =====================================================================
    VISUALIZADOR DE FOTOS
@@ -784,6 +867,13 @@ svg{flex:none;}
   .bm-av-fotos-lista{grid-auto-columns:96px;margin:0;padding:0;}
 
   .bm-atendimento{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:40px;padding:44px 48px;}
+  .bm-promo-in{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px 48px;padding:44px 48px;align-items:center;}
+  .bm-promo{padding-top:0;}
+  .bm-promo .bm-promo-cta{grid-column:1;max-width:460px;text-align:left;}
+  .bm-comp{grid-column:2;grid-row:1 / span 2;padding:22px;}
+  .bm-palco-off{top:18px;right:18px;width:92px;height:92px;font-size:14px;}
+  .bm-palco-off b{font-size:28px;}
+  .bm-palco-off small{font-size:10.5px;}
   .bm-rodape-grid{grid-template-columns:1.4fr 1fr 1fr 1fr;}
 
   .bm-wa-flutuante{right:22px;bottom:22px;width:auto;height:auto;padding:10px 18px 10px 12px;border-radius:999px;gap:10px;}

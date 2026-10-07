@@ -22,7 +22,7 @@
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <script>document.documentElement.className='js';</script>
 <link rel="preload" as="image" href="img/kit-bodyman-845.webp" imagesrcset="img/kit-bodyman-460.webp 460w, img/kit-bodyman-600.webp 600w, img/kit-bodyman-845.webp 845w" imagesizes="(min-width: 961px) 420px, 45vw" fetchpriority="high">
-<link rel="stylesheet" href="style.css?v=20261002">
+<link rel="stylesheet" href="style.css?v=20261007">
 
 <!-- Meta Pixel Code -->
 <script>
@@ -53,12 +53,17 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
  "image":["https://idealstore.online/img/og-bodyman.jpg"],
  "description":"Kit com três Body Splash masculinos Bodyman de 200 ml cada: Enigma, Midtown e Barbarius. 600 ml no total.",
  "brand":{"@type":"Brand","name":"Bodyman"},
- "offers":{"@type":"Offer","url":"https://idealstore.online/","priceCurrency":"BRL","price":"97.00",
+ "offers":{"@type":"Offer","url":"https://idealstore.online/","priceCurrency":"BRL","price":"82.45",
    "availability":"https://schema.org/InStock","seller":{"@type":"Organization","name":"Ideal Store"}}}
 </script>
 </head>
 <body>
 <a class="bm-pular" href="#conteudo">Pular para o conteúdo</a>
+
+<!-- faixa da promoção do kit (some sozinha se TRIPLE_PIX_DISCOUNT = 0 no script.js) -->
+<a class="bm-faixa" href="#promo-kit" data-promo>
+  <b><span data-off>15%</span> OFF no PIX</b> no kit completo · <s data-cheio="triple">R$ 97,00</s> por <b data-preco="triple">R$ 82,45</b> · frete grátis
+</a>
 
 <!-- ====================== CABEÇALHO ====================== -->
 <header class="bm-header" id="topo">
@@ -100,6 +105,7 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
                alt="Kit Bodyman com os três Body Splash de 200 ml: Enigma, Midtown e Barbarius"
                fetchpriority="high" decoding="async">
           <span class="bm-palco-tag">Kit com 3 · 600 ml</span>
+          <span class="bm-palco-off" data-promo aria-hidden="true"><b data-off>15%</b>OFF<small>no PIX</small></span>
         </div>
       </div>
 
@@ -117,8 +123,9 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
         <p class="bm-kit-linha"><b>Enigma + Midtown + Barbarius</b><br>3 frascos de 200&nbsp;ml · <b>600&nbsp;ml no total</b></p>
 
         <div class="bm-preco-bloco">
-          <p class="bm-preco"><span data-preco="triple">R$ 97,00</span> <small>no PIX</small></p>
-          <p class="bm-preco-de"><s data-de="triple">R$ 149,70</s> comprando separado · <b>economize <span data-econ="triple">R$ 52,70</span></b></p>
+          <p class="bm-preco-cheio" data-promo><span class="bm-off-pill"><span data-off>15%</span> OFF no PIX</span> De <s data-cheio="triple">R$ 97,00</s> por</p>
+          <p class="bm-preco"><span data-preco="triple">R$ 82,45</span> <small>no PIX</small></p>
+          <p class="bm-preco-de">Sai <b class="bm-preco-un"><span data-unit="triple">R$ 27,48</span> cada frasco</b> · <s data-de="triple">R$ 149,70</s> comprando separado · <b>economize <span data-econ="triple">R$ 67,25</span></b></p>
         </div>
 
         <ul class="bm-chips">
@@ -127,7 +134,7 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
           <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Pagamento seguro</li>
         </ul>
 
-        <button type="button" class="bm-btn bm-btn--lg bm-cta" id="bm-cta-hero" data-acao="kit" data-cta="hero">Quero meu kit</button>
+        <button type="button" class="bm-btn bm-btn--lg bm-cta" id="bm-cta-hero" data-acao="kit" data-cta="hero"><span>Quero meu kit<span data-promo> com <span data-off>15%</span> OFF</span></span></button>
         <p class="bm-cta-selos">Pagamento seguro <i aria-hidden="true">•</i> Pedido com rastreamento <i aria-hidden="true">•</i> Suporte ao cliente</p>
         <p class="bm-envio-hoje" data-envio-hero><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5 13h6l-1 8 8-10h-6z"/></svg><span>Postagem em até 1 dia útil após a confirmação do pagamento</span></p>
         <p class="bm-hero-alt"><a href="#oferta" data-acao="oferta" data-cta="hero-opcoes">Prefere 1 ou 2 fragrâncias? Ver opções</a></p>
@@ -233,9 +240,56 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
 
       <div class="bm-cta-bloco">
         <button type="button" class="bm-btn bm-btn--lg bm-cta" data-acao="kit" data-cta="fragrancias">Quero meu kit</button>
-        <p class="bm-cta-sub"><span data-preco="triple">R$ 97,00</span> no PIX · as 3 fragrâncias · frete grátis</p>
+        <p class="bm-cta-sub"><s data-promo data-cheio="triple">R$ 97,00</s> <b data-preco="triple">R$ 82,45</b> no PIX<span data-promo> (<span data-off>15%</span> OFF)</span> · as 3 fragrâncias · frete grátis</p>
         <a class="bm-cta-link" href="#oferta" data-acao="oferta" data-cta="fragrancias-opcoes">Escolher minhas fragrâncias</a>
       </div>
+    </div>
+  </section>
+
+  <!-- ====================== PROMOÇÃO DO KIT ======================
+       Números calculados pelo script.js a partir dos preços do CONFIG.
+       Some sozinho se TRIPLE_PIX_DISCOUNT = 0. -->
+  <section class="bm-secao bm-promo" id="promo-kit" aria-labelledby="promo-titulo" data-promo>
+    <div class="bm-wrap">
+     <div class="bm-promo-in">
+      <div class="bm-promo-txt">
+        <p class="bm-promo-selo"><span data-off>15%</span> OFF no PIX</p>
+        <h2 class="bm-h2" id="promo-titulo">Leve as 3 fragrâncias e pague menos por cada uma</h2>
+        <p class="bm-promo-preco">De <s data-cheio="triple">R$ 97,00</s> por <b data-preco="triple">R$ 82,45</b> <small>no PIX</small></p>
+        <ul class="bm-promo-motivos">
+          <li><b>Só <span data-diff>R$ 2,55</span> a mais que 2 frascos.</b> Na prática, o terceiro frasco sai quase de graça.</li>
+          <li><b>Uma fragrância para cada momento.</b> Enigma elegante e misterioso, Midtown urbano e versátil, Barbarius intenso e marcante.</li>
+          <li><b>600 ml com frete grátis.</b> Três frascos de 200 ml para todo o Brasil, sem custo de envio.</li>
+        </ul>
+      </div>
+
+      <figure class="bm-comp">
+        <figcaption class="bm-comp-titulo">Preço por frasco</figcaption>
+        <ul class="bm-comp-lista">
+          <li class="bm-comp-item" data-destaque="true">
+            <span class="bm-comp-nome">Kit completo <small>3 frascos</small></span>
+            <span class="bm-comp-trilho"><i data-barra="triple" style="width:55%"></i></span>
+            <b class="bm-comp-valor"><span data-unit="triple">R$ 27,48</span></b>
+          </li>
+          <li class="bm-comp-item">
+            <span class="bm-comp-nome">2 frascos</span>
+            <span class="bm-comp-trilho"><i data-barra="double" style="width:80%"></i></span>
+            <b class="bm-comp-valor"><span data-unit="double">R$ 39,95</span></b>
+          </li>
+          <li class="bm-comp-item">
+            <span class="bm-comp-nome">1 frasco</span>
+            <span class="bm-comp-trilho"><i data-barra="single" style="width:100%"></i></span>
+            <b class="bm-comp-valor"><span data-preco="single">R$ 49,90</span></b>
+          </li>
+        </ul>
+        <p class="bm-comp-nota">No kit, cada frasco sai <b><span data-menos>45%</span> mais barato</b> do que comprando avulso.</p>
+      </figure>
+
+      <div class="bm-cta-bloco bm-promo-cta">
+        <button type="button" class="bm-btn bm-btn--lg bm-cta" data-acao="kit" data-cta="promo"><span>Quero o kit com <span data-off>15%</span> OFF</span></button>
+        <p class="bm-cta-sub">Desconto já aplicado no total, sem cupom · pagamento via PIX</p>
+      </div>
+     </div>
     </div>
   </section>
 
@@ -245,7 +299,7 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
       <header class="bm-secao-cab">
         <p class="bm-sobre">Seu pedido</p>
         <h2 class="bm-h2" id="of-titulo">Escolha como quer levar</h2>
-        <p class="bm-lead">O kit com as três sai mais em conta por frasco. Se preferir, leve 1 ou 2.</p>
+        <p class="bm-lead">O kit com as três sai mais em conta por frasco<span data-promo> e tem <span data-off>15%</span> OFF no PIX</span>. Se preferir, leve 1 ou 2.</p>
       </header>
 
       <div class="bm-oferta-grid">
@@ -254,11 +308,11 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
             <button type="button" class="bm-opcao" data-opcao="kit" aria-pressed="true">
               <span class="bm-mark" aria-hidden="true"></span>
               <span class="bm-opcao-txt">
-                <span class="bm-opcao-nome">Kit completo — 3 frascos <span class="bm-flag">Melhor oferta</span></span>
+                <span class="bm-opcao-nome">Kit completo — 3 frascos <span class="bm-flag" data-promo><span data-off>15%</span> OFF no PIX</span><span class="bm-flag" data-sem-promo hidden>Melhor oferta</span></span>
                 <span class="bm-opcao-sub">Enigma, Midtown e Barbarius · 600&nbsp;ml</span>
-                <span class="bm-opcao-econ">Economize <span data-econ="triple">R$ 52,70</span></span>
+                <span class="bm-opcao-econ">Economize <span data-econ="triple">R$ 67,25</span></span>
               </span>
-              <span class="bm-opcao-preco"><b data-preco="triple">R$ 97,00</b><small><span data-unit="triple">R$ 32,33</span> cada</small></span>
+              <span class="bm-opcao-preco"><s data-promo data-cheio="triple">R$ 97,00</s><b data-preco="triple">R$ 82,45</b><small><span data-unit="triple">R$ 27,48</span> cada</small></span>
             </button>
             <button type="button" class="bm-opcao" data-opcao="2" aria-pressed="false">
               <span class="bm-mark" aria-hidden="true"></span>
@@ -282,7 +336,7 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
           <div class="bm-slots" id="bm-slots"></div>
 
           <div class="bm-upsell" id="bm-upsell" hidden>
-            <p>Por mais <strong data-diff>R$ 17,10</strong> você leva o kit completo, com a terceira fragrância.</p>
+            <p id="bm-upsell-txt">Por só <strong>+<span data-diff>R$ 2,55</span></strong> você leva o kit completo, com as 3 fragrâncias.</p>
             <button type="button" class="bm-btn bm-btn--sm" data-acao="kit-selecionar">Quero os 3</button>
           </div>
 
@@ -295,15 +349,17 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
             </ul>
             <div class="bm-resumo-linhas" id="bm-resumo-linhas">
               <div><span>Quantidade</span><b>3 frascos · 600 ml</b></div>
+              <div><span>Preço do kit</span><b>R$ 97,00</b></div>
+              <div class="bm-eco"><span>15% OFF no PIX</span><b>−R$ 14,55</b></div>
               <div><span>Frete</span><b class="bm-gratis">Grátis</b></div>
             </div>
             <div class="bm-resumo-total">
               <span>Total no PIX</span>
-              <strong id="bm-resumo-total">R$ 97,00</strong>
+              <strong id="bm-resumo-total">R$ 82,45</strong>
             </div>
           </div>
 
-          <button type="button" class="bm-btn bm-btn--lg bm-comprar" id="bm-finalizar" data-cta="oferta">Finalizar compra — R$ 97,00</button>
+          <button type="button" class="bm-btn bm-btn--lg bm-comprar" id="bm-finalizar" data-cta="oferta">Finalizar compra — R$ 82,45</button>
           <p class="bm-aviso" id="bm-aviso" role="status"></p>
           <ul class="bm-resumo-selos">
             <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Pagamento seguro via PIX</li>
@@ -405,7 +461,7 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
 
       <div class="bm-cta-bloco">
         <button type="button" class="bm-btn bm-btn--lg bm-cta" data-acao="kit" data-cta="fotos">Garantir meu kit</button>
-        <p class="bm-cta-sub"><span data-preco="triple">R$ 97,00</span> no PIX · frete grátis para todo o Brasil</p>
+        <p class="bm-cta-sub"><s data-promo data-cheio="triple">R$ 97,00</s> <b data-preco="triple">R$ 82,45</b> no PIX<span data-promo> (<span data-off>15%</span> OFF)</span> · frete grátis para todo o Brasil</p>
       </div>
     </div>
   </section>
@@ -498,7 +554,7 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
 
       <div class="bm-cta-bloco">
         <button type="button" class="bm-btn bm-btn--lg bm-cta" data-acao="kit" data-cta="avaliacoes">Quero meu kit</button>
-        <p class="bm-cta-sub"><span data-preco="triple">R$ 97,00</span> no PIX · Enigma, Midtown e Barbarius · 600 ml</p>
+        <p class="bm-cta-sub"><s data-promo data-cheio="triple">R$ 97,00</s> <b data-preco="triple">R$ 82,45</b> no PIX<span data-promo> (<span data-off>15%</span> OFF)</span> · Enigma, Midtown e Barbarius · 600 ml</p>
       </div>
     </div>
   </section>
@@ -529,9 +585,13 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
           <summary>O site aceita PIX?</summary>
           <p>Sim. No momento o pagamento é feito somente via PIX, pelo QR Code ou pelo código copia e cola. A confirmação é automática e leva poucos segundos.</p>
         </details>
+        <details data-promo>
+          <summary>Como funciona o desconto de <span data-off>15%</span>?</summary>
+          <p>O desconto vale para o kit completo (Enigma, Midtown e Barbarius) pago via PIX: de <span data-cheio="triple">R$ 97,00</span> por <span data-preco="triple">R$ 82,45</span>. Ele já aparece aplicado no resumo do pedido, antes de você gerar o PIX. Não precisa de cupom.</p>
+        </details>
         <details>
           <summary>Posso comprar apenas uma fragrância?</summary>
-          <p>Sim. Você pode levar 1 frasco por <span data-preco="single">R$ 49,90</span> ou 2 frascos por <span data-preco="double">R$ 79,90</span>, escolhendo as fragrâncias. O kit com as três sai por <span data-preco="triple">R$ 97,00</span>. <a href="#oferta" data-acao="oferta" data-cta="faq-opcoes">Ver opções</a></p>
+          <p>Sim. Você pode levar 1 frasco por <span data-preco="single">R$ 49,90</span> ou 2 frascos por <span data-preco="double">R$ 79,90</span>, escolhendo as fragrâncias. O kit com as três sai por <span data-preco="triple">R$ 82,45</span> no PIX<span data-promo>, já com <span data-off>15%</span> de desconto</span>. <a href="#oferta" data-acao="oferta" data-cta="faq-opcoes">Ver opções</a></p>
         </details>
         <details>
           <summary>Qual o tamanho de cada frasco?</summary>
@@ -633,12 +693,12 @@ src="https://www.facebook.com/tr?id=2207402056499689&ev=PageView&noscript=1"
 
 <!-- barra fixa de compra (celular) -->
 <div class="bm-sticky" id="bm-sticky" data-visivel="false">
-  <p class="bm-sticky-txt"><b id="bm-sticky-titulo">Kit completo · <span data-preco="triple">R$ 97,00</span></b><span id="bm-sticky-sub">3 frascos · 600 ml · frete grátis</span></p>
+  <p class="bm-sticky-txt"><b id="bm-sticky-titulo"><span data-preco="triple">R$ 82,45</span></b><span id="bm-sticky-sub">Kit com 15% OFF no PIX</span></p>
   <button type="button" class="bm-btn" data-acao="sticky" data-cta="sticky" id="bm-sticky-btn">Quero meu kit</button>
 </div>
 
-<script src="site.js?v=20261002" defer></script>
-<script src="script.js?v=20261002" defer></script>
-<script src="checkout.js?v=20261002" defer></script>
+<script src="site.js?v=20261007" defer></script>
+<script src="script.js?v=20261007" defer></script>
+<script src="checkout.js?v=20261007" defer></script>
 </body>
 </html>

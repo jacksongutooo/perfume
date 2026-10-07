@@ -238,15 +238,21 @@
   function resumoTopo(expandido) {
     var p = estado.pedido;
     var qtd = p.produtos.length;
+    var promo = p.cheio > p.total && p.descontoPct > 0;
     return '<div class="bm-co-pedido">' +
       '<div class="bm-co-pedido-linha">' +
         '<div><p class="bm-co-pedido-nome">' + escapar(NOME_PLANO[p.plan] || 'Seu pedido') + '</p>' +
-        '<p class="bm-co-pedido-sub">' + escapar(nomesProdutos(p)) + ' · ' + (qtd * 200) + ' ml</p></div>' +
-        '<span class="bm-co-pedido-total">' + brl(p.total) + '</span>' +
+        '<p class="bm-co-pedido-sub">' + escapar(nomesProdutos(p)) + ' · ' + (qtd * 200) + ' ml</p>' +
+        (promo ? '<p class="bm-co-pedido-off">' + p.descontoPct + '% OFF no PIX aplicado</p>' : '') + '</div>' +
+        '<span class="bm-co-pedido-total">' + (promo ? '<s>' + brl(p.cheio) + '</s>' : '') + brl(p.total) + '</span>' +
       '</div>' +
       (expandido
         ? '<dl class="bm-co-pedido-det">' +
             '<div><dt>Quantidade</dt><dd>' + qtd + (qtd > 1 ? ' frascos' : ' frasco') + ' de 200 ml</dd></div>' +
+            (promo
+              ? '<div><dt>Preço do kit</dt><dd>' + brl(p.cheio) + '</dd></div>' +
+                '<div><dt>' + p.descontoPct + '% OFF no PIX</dt><dd class="bm-gratis">−' + brl(p.cheio - p.total) + '</dd></div>'
+              : '') +
             '<div><dt>Frete</dt><dd class="bm-gratis">Grátis</dd></div>' +
             '<div><dt>Total no PIX</dt><dd>' + brl(p.total) + '</dd></div>' +
           '</dl>' +
